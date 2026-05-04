@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: apex-football-council-analyzer
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: CACHE_TTL_SECONDS
+        value: "900"
+      - key: DATA_CONFIDENCE_MIN
+        value: "0.60"
+      - key: EDGE_MIN
+        value: "0.035"

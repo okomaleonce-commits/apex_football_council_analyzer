@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from app.models import DataPack, MatchAnalysisRequest, SourceStatus, TeamSnapshot, OddsQuote
 from app.providers.api_football import APIFootballProvider
 from app.providers.football_data import FootballDataProvider
 from app.providers.odds_api import OddsAPIProvider
-from app.providers.base import ProviderError
 
 
 class DataFetcher:
@@ -17,7 +16,7 @@ class DataFetcher:
 
     async def countries(self):
         if not self.api_football.enabled:
-            return [{"name": "England"}, {"name": "France"}, {"name": "Spain"}, {"name": "Italy"}, {"name": "Germany"}]
+            return [{"name": c} for c in ["England", "France", "Spain", "Italy", "Germany"]]
         try:
             payload = await self.api_football.countries()
             return payload.get("response", [])
@@ -25,13 +24,14 @@ class DataFetcher:
             return []
 
     async def leagues(self, country: str, season: int | None = None):
+        fallback = ["Premier League", "Ligue 1", "La Liga", "Serie A", "Bundesliga"]
         if not self.api_football.enabled:
-            return [{"league": {"id": None, "name": "Premier League"}}, {"league": {"id": None, "name": "Ligue 1"}}, {"league": {"id": None, "name": "La Liga"}}, {"league": {"id": None, "name": "Serie A"}}, {"league": {"id": None, "name": "Bundesliga"}}]
+            return [{"league": {"id": None, "name": x}} for x in fallback]
         try:
             payload = await self.api_football.leagues(country=country, season=season)
             return payload.get("response", [])
         except Exception:
-            return []
+            return [{"league": {"id": None, "name": x}} for x in fallback]
 
     async def teams(self, league_id: int | None, league: str, season: int | None = None):
         if self.api_football.enabled and league_id:
@@ -54,7 +54,7 @@ class DataFetcher:
 
         if self.api_football.enabled:
             try:
-                fixture_payload = await self.api_football.fixtures(date=str(request.match_date), league_id=request.league_id, season=request.season)
+                fixture_payload = await self.api_football.fixtures(match_date=str(request.match_date), league_id=request.league_id, season=request.season)
                 raw["api_football_fixtures"] = fixture_payload
                 statuses.append(SourceStatus(name="api_football", ok=True, confidence=0.65, message="Fixtures récupérés"))
                 for item in fixture_payload.get("response", []):
@@ -73,15 +73,16 @@ class DataFetcher:
         else:
             statuses.append(SourceStatus(name="api_football", ok=False, confidence=0.0, message="API_FOOTBALL_KEY manquante"))
 
-        if self.football_data.enabled:
+        fd_code = self.football_data.competition_code(request.league)
+        if self.football_data.enabled and fd_code:
             try:
-                fd_payload = await self.football_data.matches(request.league, str(request.match_date))
+                fd_payload = await self.football_data.matches(fd_code, date_from=str(request.match_date), date_to=str(request.match_date), season=request.season)
                 raw["football_data_matches"] = fd_payload
                 statuses.append(SourceStatus(name="football_data", ok=True, confidence=0.45, message="Données football-data disponibles"))
             except Exception as exc:
                 statuses.append(SourceStatus(name="football_data", ok=False, confidence=0.0, message=str(exc)))
         else:
-            statuses.append(SourceStatus(name="football_data", ok=False, confidence=0.0, message="FOOTBALL_DATA_KEY manquante"))
+            statuses.append(SourceStatus(name="football_data", ok=False, confidence=0.0, message="FOOTBALL_DATA_KEY manquante ou ligue non mappée"))
 
         if self.odds_api.enabled:
             try:

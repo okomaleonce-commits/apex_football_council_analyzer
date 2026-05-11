@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>APEX Football Council Analyzer</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">APEX Football Council Analyzer</p>
+        <h1>Analyse auto-data de match football</h1>
+        <p class="subtitle">Date → pays → ligue → home/away → probabilités, marchés, value, conseil multi-agents.</p>
+      </div>
+      <div class="status-card" id="healthCard">Chargement statut...</div>
+    </section>
+
+    <section class="panel">
+      <h2>Entrée match</h2>
+      <form id="analysisForm" class="grid-form">
+        <label>Date
+          <input type="date" id="matchDate" required />
+        </label>
+        <label>Saison
+          <input type="number" id="season" min="2000" max="2100" />
+        </label>
+        <label>Pays
+          <select id="country" required></select>
+        </label>
+        <label>Ligue
+          <select id="league" required></select>
+        </label>
+        <label>Home
+          <input type="text" id="home" placeholder="Ex: Arsenal" required />
+        </label>
+        <label>Away
+          <input type="text" id="away" placeholder="Ex: Chelsea" required />
+        </label>
+        <label>League ID
+          <input type="number" id="leagueId" placeholder="optionnel" />
+        </label>
+        <label>Risque
+          <select id="riskProfile">
+            <option value="faible">Faible</option>
+            <option value="modere" selected>Modéré</option>
+            <option value="eleve">Élevé</option>
+          </select>
+        </label>
+        <button type="submit">Analyser</button>
+      </form>
+    </section>
+
+    <section id="result" class="result hidden"></section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

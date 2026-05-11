@@ -46,8 +46,35 @@ class OddsAPIProvider(HTTPProvider):
             raise ProviderError("ODDS_API_KEY is missing")
         return await self.get(f"sports/{sport_key}/odds", params={"apiKey": self.api_key, "regions": self.regions, "markets": self.markets, "oddsFormat": "decimal", "dateFormat": "iso"})
 
+    async def odds_for_match(self, league: str, home: str, away: str) -> list[OddsQuote]:
+        key = self.sport_key(league)
+        if not key:
+            return []
+        payload = await self.odds(key)
+        return self.normalize_quotes(payload, home, away)
+
     @staticmethod
-    def normalize_quotes(payload: dict[str, Any] | list[dict[str, Any]], home: str, away: str) -> list[OddsQuote]:
+    def normalize_selection(market_key: str, outcome_name: str, home: str, away: str, point: float | None = None) -> tuple[str, str]:
+        if market_key == "h2h":
+            market = "1X2"
+            lowered = outcome_name.lower()
+            if lowered == home.lower():
+                return market, "HOME"
+            if lowered == away.lower():
+                return market, "AWAY"
+            if lowered in ["draw", "tie"]:
+                return market, "DRAW"
+            return market, outcome_name.upper()
+        if market_key == "totals":
+            market = "OVER_UNDER_2_5"
+            side = "OVER" if outcome_name.lower().startswith("over") else "UNDER"
+            if point and abs(float(point) - 2.5) < 0.01:
+                return market, f"{side}_2_5"
+            return market, f"{side}_{point}"
+        return market_key.upper(), outcome_name.upper()
+
+    @classmethod
+    def normalize_quotes(cls, payload: dict[str, Any] | list[dict[str, Any]], home: str, away: str) -> list[OddsQuote]:
         events = payload if isinstance(payload, list) else payload.get("response") or payload.get("data") or []
         quotes: list[OddsQuote] = []
         for event in events:
@@ -59,22 +86,18 @@ class OddsAPIProvider(HTTPProvider):
                 continue
             for bookmaker in event.get("bookmakers", []):
                 bookmaker_name = bookmaker.get("title") or bookmaker.get("key") or "unknown"
-                for market in bookmaker.get("markets", []):
-                    key = market.get("key", "")
-                    for outcome in market.get("outcomes", []):
+                for market_data in bookmaker.get("markets", []):
+                    key = market_data.get("key", "")
+                    for outcome in market_data.get("outcomes", []):
                         price = outcome.get("price")
                         if not price:
                             continue
-                        normalized_market = "1X2" if key == "h2h" else "OVER_UNDER_2_5" if key == "totals" else key
-                        selection = outcome.get("name", "")
-                        point = outcome.get("point")
-                        if key == "totals" and point:
-                            selection = f"{selection} {point}"
+                        market, selection = cls.normalize_selection(key, outcome.get("name", ""), home, away, outcome.get("point"))
                         last_update = None
                         try:
-                            raw_update = market.get("last_update") or bookmaker.get("last_update")
+                            raw_update = market_data.get("last_update") or bookmaker.get("last_update")
                             last_update = datetime.fromisoformat(raw_update.replace("Z", "+00:00")) if raw_update else None
                         except Exception:
-                            last_update = None
-                        quotes.append(OddsQuote(market=normalized_market, selection=selection, bookmaker=bookmaker_name, price=float(price), last_update=last_update))
+                            pass
+                        quotes.append(OddsQuote(market=market, selection=selection, bookmaker=bookmaker_name, price=float(price), last_update=last_update))
         return quotes

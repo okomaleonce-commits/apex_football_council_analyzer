@@ -22,6 +22,11 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     openai_model: str = "gpt-5.1"
+
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-haiku-4-5"
+    # "rules" = conseil basé sur des règles (défaut, sans clé API)
+    # "llm"   = conseil multi-agents via Anthropic (nécessite ANTHROPIC_API_KEY)
     llm_council_mode: str = "rules"
 
     data_confidence_min: float = 0.60

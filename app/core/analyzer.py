@@ -9,7 +9,7 @@ class FootballAnalyzer:
     def __init__(self, settings):
         self.settings = settings
 
-    def analyze(self, pack: DataPack) -> AnalysisReport:
+    async def analyze(self, pack: DataPack) -> AnalysisReport:
         quality = self._quality(pack)
         lambda_home, lambda_away = self._estimate_lambdas(pack)
         probabilities = ProbabilitySet(**compute_probabilities(lambda_home, lambda_away))
@@ -27,7 +27,7 @@ class FootballAnalyzer:
         elif lean:
             verdict = "MONITOR_LIVE"
             warnings.append("Signal intéressant mais edge insuffisant ou cote absente.")
-        council = self._council(quality, signals, primary)
+        council = await self._council(quality, probabilities, signals, primary)
         return AnalysisReport(
             request=pack.request,
             data_quality=quality,
@@ -113,12 +113,74 @@ class FootballAnalyzer:
             out.append(MarketSignal(market=market, selection=selection, probability=prob, fair_odds=fo, best_odds=best_odds, edge=e, roi_estimate=roi, confidence=round(q * prob, 3), status=status, rationale=rationale))
         return sorted(out, key=lambda s: (s.status == "VALIDATED", s.edge or 0, s.confidence), reverse=True)
 
-    def _council(self, quality: DataQuality, signals: list[MarketSignal], primary: MarketSignal | None) -> CouncilVerdict:
+    async def _council(
+        self,
+        quality: DataQuality,
+        probabilities: ProbabilitySet,
+        signals: list[MarketSignal],
+        primary: MarketSignal | None,
+    ) -> CouncilVerdict:
+        if self.settings.llm_council_mode == "llm" and self.settings.anthropic_api_key:
+            from app.core.council import run_llm_council
+            return await run_llm_council(
+                api_key=self.settings.anthropic_api_key,
+                model=self.settings.anthropic_model,
+                quality=quality,
+                probabilities=probabilities,
+                signals=signals,
+                primary=primary,
+            )
+        return self._rules_council(quality, signals, primary)
+
+    def _rules_council(
+        self,
+        quality: DataQuality,
+        signals: list[MarketSignal],
+        primary: MarketSignal | None,
+    ) -> CouncilVerdict:
         risks = quality.reasons if quality.score < 0.70 else []
-        recommendation = "NO BET par défaut : données ou value insuffisantes." if not primary else f"Signal principal : {primary.market} {primary.selection}."
+        recommendation = (
+            "NO BET par défaut : données ou value insuffisantes."
+            if not primary
+            else f"Signal principal : {primary.market} {primary.selection}."
+        )
         advisors = [
-            AdvisorOutput(advisor="Contrarian", position="Cherche les pièges de marché", risks=risks, recommendation="Refuser si la cote ne dépasse pas la fair odds."),
-            AdvisorOutput(advisor="First Principles", position="Valide la logique statistique", risks=quality.reasons, recommendation="Ne jamais confondre probabilité élevée et value bet."),
-            AdvisorOutput(advisor="Executor", position="Transforme l'analyse en action", risks=[], recommendation=recommendation),
+            AdvisorOutput(
+                advisor="Contrarian",
+                position="Cherche les pièges de marché",
+                risks=risks,
+                recommendation="Refuser si la cote ne dépasse pas la fair odds.",
+            ),
+            AdvisorOutput(
+                advisor="First Principles",
+                position="Valide la logique statistique",
+                risks=quality.reasons,
+                recommendation="Ne jamais confondre probabilité élevée et value bet.",
+            ),
+            AdvisorOutput(
+                advisor="Expansionist",
+                position="Cherche les opportunités secondaires",
+                risks=[],
+                recommendation="Explorer BTTS et Over/Under si le 1X2 manque de value.",
+            ),
+            AdvisorOutput(
+                advisor="Outsider",
+                position="Vérifie les angles morts",
+                risks=risks,
+                recommendation="Confirmer les lineups et la fraîcheur des données avant de parier.",
+            ),
+            AdvisorOutput(
+                advisor="Executor",
+                position="Transforme l'analyse en action",
+                risks=[],
+                recommendation=recommendation,
+            ),
         ]
-        return CouncilVerdict(where_agrees=["La décision doit dépendre de la qualité des données et de l'edge."], where_clashes=["Signal fort sans cote exploitable = surveillance, pas pari."], blind_spots=risks, recommendation=recommendation, first_action="Vérifier les lineups et les cotes proches du coup d'envoi.", advisors=advisors)
+        return CouncilVerdict(
+            where_agrees=["La décision doit dépendre de la qualité des données et de l'edge."],
+            where_clashes=["Signal fort sans cote exploitable = surveillance, pas pari."],
+            blind_spots=risks,
+            recommendation=recommendation,
+            first_action="Vérifier les lineups et les cotes proches du coup d'envoi.",
+            advisors=advisors,
+        )

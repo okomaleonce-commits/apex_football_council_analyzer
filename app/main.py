@@ -53,5 +53,5 @@ async def analyze_match(request: MatchAnalysisRequest):
     if request.home.lower().strip() == request.away.lower().strip():
         raise HTTPException(status_code=400, detail="Home et Away doivent être deux équipes différentes.")
     pack = await fetcher.build_match_pack(request)
-    report = analyzer.analyze(pack)
+    report = await analyzer.analyze(pack)
     return report.model_dump(mode="json")

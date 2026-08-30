@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Secrets — ne jamais committer les cles API
+.env
+.env.local
+
+# Cache SQLite du fetcher
+*.db
+*.sqlite
+*.sqlite3
+
+# OS / editeurs
+.DS_Store
+.idea/
+.vscode/

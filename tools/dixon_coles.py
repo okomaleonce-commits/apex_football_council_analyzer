@@ -97,12 +97,41 @@ def home_bias(matches):
     return sum(d) / len(d)
 
 
-def fit_home_k(matches, lo=0.90, hi=1.45, step=0.005):
+MIN_FIT_SAMPLE = 50   # cf. football-league-backtester : < 50 matchs = recalibrage INTERDIT
+
+
+def fit_home_k(matches, lo=0.90, hi=1.45, step=0.005, min_matches=MIN_FIT_SAMPLE):
     """Cherche le coefficient k (lambda_home x k, lambda_away / k) qui annule le
     biais domicile moyen. matches: [(nom, fn_probs(k) -> p_home, p_home_marche)].
-    Ancrer le modele sur le consensus marche puis lire les residus : seuls les
-    residus sont interpretables comme edge.
+
+    AUDIT 2026-09-21 — CETTE FONCTION A PRODUIT UNE ERREUR REELLE.
+
+    Le 30/08/2026 elle a ete appelee sur 5 matchs et a renvoye k=1.140, valeur
+    appliquee telle quelle a l'analyse du jour. Testee ensuite hors-echantillon
+    sur 116 matchs de la saison 2026/27 (EPL + Serie A + Ligue 1, priors = tables
+    finales 2025/26 uniquement), la courbe de log-loss est monotone croissante :
+
+        k = 1.00 -> 1.0048   <-- optimum
+        k = 1.08 -> 1.0198
+        k = 1.14 -> 1.0377   <-- valeur retenue le 30/08, +3.3% pire que l'optimum
+        k = 1.20 -> 1.0604
+
+    Autrement dit : le biais domicile de -8.6 points mesure sur 5 matchs etait du
+    bruit d'echantillonnage, pas un defaut du modele. Les HOME_ADV des moteurs de
+    ligue suffisent (EPL 1.08 vs ratio buts dom/ext reellement observe 1.073 sur
+    la saison). Le correctif ne corrigeait rien : il degradait.
+
+    D'ou le garde-fou ci-dessous. Un ajustement de calibration se fit sur un
+    echantillon, pas sur une soiree de matchs.
     """
+    if len(matches) < min_matches:
+        raise ValueError(
+            f"fit_home_k refuse de fitter sur {len(matches)} matchs "
+            f"(minimum {min_matches}). Un k fitte sur un micro-echantillon "
+            f"surapprend le bruit : c'est l'erreur du 30/08/2026 (k=1.140 sur "
+            f"5 matchs, +3.3% de log-loss hors-echantillon). Utiliser k=1.00 "
+            f"et s'en remettre au HOME_ADV du moteur de ligue."
+        )
     best = None
     k = lo
     while k <= hi:
@@ -125,3 +154,36 @@ def sensitivity(p_with, p_without, p_market):
 def breakeven_odds(prob, edge_min=0.03):
     """Cote minimale pour respecter le filtre 1 de S7 (edge >= 3%)."""
     return (1 + edge_min) / prob
+
+
+# ---------------------------------------------------------------------------
+# CALIBRATION EMPIRIQUE — mesuree le 2026-09-21 sur la saison 2026/27 en cours
+# Source : football-data.co.uk, 202 matchs, resultats + cotes de cloture.
+# Regenerer avec tools/weekly_audit.py (ne pas editer ces valeurs a la main).
+# ---------------------------------------------------------------------------
+
+HOME_K = 1.00   # correction domicile globale. NE PAS AUGMENTER sans >= 50 matchs.
+
+# ratio observe buts_domicile / buts_exterieur, et buts/match reels par ligue
+OBSERVED = {
+    # ligue            N    buts/match   ratio dom/ext   param moteur   ecart
+    "Premier League": dict(n=40, goals=2.85, home_ratio=1.073, engine=2.89),
+    "Serie A":        dict(n=40, goals=3.02, home_ratio=0.952, engine=2.45),
+    "Ligue 1":        dict(n=36, goals=2.75, home_ratio=1.020, engine=2.78),
+    "La Liga":        dict(n=59, goals=3.05, home_ratio=1.278, engine=None),
+    "Bundesliga":     dict(n=27, goals=3.85, home_ratio=1.600, engine=3.10),
+}
+
+# Ligues dont le parametre moteur diverge du reel de plus de 0.30 but/match.
+# Statut : SIGNALE, PAS CORRIGE — l'echantillon par ligue (<50) n'autorise
+# que l'observation (regle du football-league-backtester).
+PARAM_DRIFT_WATCH = ("Serie A", "Bundesliga")
+
+# Performance hors-echantillon du modele vs marche (116 matchs, k=1.00) :
+#   Brier   modele 0.5946  |  marche 0.5970
+#   LogLoss modele 1.0048  |  marche 1.0010
+#   Issues  modele 51.7%   |  marche 50.9%
+# => parite avec le marche. Aucun ROI significatif a aucun seuil d'edge
+#    (IC 95% du ROI large de ~60 points). Le defaut NO BET reste justifie
+#    empiriquement, pas seulement par prudence.
+MARKET_PARITY = True

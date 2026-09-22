@@ -1,0 +1,121 @@
+4040 /tmp/obst/hist.jsonl
+=== CALIBRATION OBSTACLE ===
+=== codes de non-terminaison releves dans les donnees ===
+  ARRETE                                     4981
+  TOMBE                                      2758
+  DEROBE                                     64
+  DISTANCE                                   35
+  RESTE_AU_POTEAU                            6
+
+courses exploitables : 2941   variables : 53
+periode : 2024-05-20 -> 2026-09-20
+disciplines : [('HAIE', 1721), ('STEEPLECHASE', 1057), ('CROSS', 163)]
+taille moyenne du champ : 9.7
+taux de non-terminaison : 19.6%
+
+apprentissage 1764 | validation 529 | test 648 (test depuis 2026-02-26)
+
+=== REFERENCE : marche PMU ===
+  validation 1.8726 | test 1.8537 | Brier test 0.08789
+
+=== A. fondamental seul (sans cotes) ===
+  L2=2.0    validation 2.0114
+  L2=10.0   validation 2.0105
+  L2=40.0   validation 2.0084
+  L2=150.0  validation 2.0065
+  -> L2=150.0  TEST 1.9861
+
+=== B. residuel : marche en offset ===
+  L2=10.0    validation 1.8780   gain vs marche -0.0055
+  L2=40.0    validation 1.8762   gain vs marche -0.0036
+  L2=150.0   validation 1.8730   gain vs marche -0.0004
+  L2=600.0   validation 1.8702   gain vs marche +0.0023
+  L2=2500.0  validation 1.8702   gain vs marche +0.0024
+  -> L2=2500.0  TEST 1.8491  (marche 1.8537, gain +0.0045)
+
+=== coefficients du residu (standardises) ===
+  t_fall                 -0.0179
+  j_n                    +0.0152
+  t_win                  +0.0151
+  t_n                    +0.0147
+  h_hip_win              +0.0140
+  inedit                 +0.0128
+  oeilleres              -0.0114
+  hongre                 +0.0095
+  h_hip_n                +0.0093
+  j_win                  +0.0089
+  etranger               +0.0086
+  mus_obst               +0.0086
+  mus_plat               -0.0086
+  pair_win               +0.0086
+  mus_fall               -0.0082
+  h_days                 +0.0074
+
+=== biais favori-outsider (test) ===
+  cote        n     implicite   observe      ROI
+  1-2          104    60.28%    57.69%     -4.04%
+  2-3          262    41.03%    36.26%    -12.52%
+  3-5          797    25.80%    22.21%    -13.55%
+  5-8          969    15.88%    13.00%    -18.11%
+  8-13        1156    10.23%     7.70%    -25.08%
+  13-21        1002     6.32%     5.19%    -22.46%
+  21-34         805     3.92%     4.10%     +3.48%
+  34-60         698     2.29%     1.58%    -27.51%
+  60-+inf       438     1.21%     1.14%     -1.83%
+
+=== calibration gagnant (deciles, test) ===
+  D1   predit   1.09%   observe   1.12%   n=623
+  D2   predit   2.05%   observe   1.93%   n=623
+  D3   predit   3.21%   observe   4.17%   n=623
+  D4   predit   4.54%   observe   3.21%   n=623
+  D5   predit   6.22%   observe   7.70%   n=623
+  D6   predit   8.24%   observe   6.74%   n=623
+  D7   predit  10.39%   observe  10.43%   n=623
+  D8   predit  13.95%   observe  13.00%   n=623
+  D9   predit  19.78%   observe  19.90%   n=623
+  D10  predit  34.49%   observe  35.74%   n=624
+
+=== PORTE DE CHUTE ===
+  taux de base 19.3%  log-loss 0.4543 -> 0.4404  (gain +0.0140)
+  Q1  predit   9.3%  observe  10.4%
+  Q2  predit  13.4%  observe  13.9%
+  Q3  predit  16.5%  observe  14.8%
+  Q4  predit  20.5%  observe  18.0%
+  Q5  predit  28.8%  observe  26.7%
+  coefficients :
+    log_distance           +0.2538
+    mus_score              -0.2175
+    log_experience         -0.2018
+    has_valeur             +0.1504
+    j_fall                 +0.1248
+    poids_rel              +0.1215
+    valeur_rel             -0.1160
+    mus_n                  -0.1063
+    t_win                  -0.0972
+    poids_ecart_moy        -0.0889
+
+=== PLACE : exposant de Stern ===
+  lambda=0.55  validation 0.5185
+  lambda=0.62  validation 0.5148
+  lambda=0.70  validation 0.5118
+  lambda=0.76  validation 0.5105
+  lambda=0.82  validation 0.5100
+  lambda=0.90  validation 0.5103
+  lambda=1.00  validation 0.5122
+  -> lambda=0.82  TEST modele 0.5195  |  marche+Stern 0.5191
+
+=== BACKTEST GAGNANT (mise plate, bootstrap 4000) ===
+  seuil    paris   gagnants     ROI        IC 95%
+  1.00       58        7     +42.76%   [-71.90% , +215.01%]
+  1.05       17        3    +238.82%   [-100.00% , +776.47%]
+  1.10        4        1    +925.00%   [-100.00% , +2975.00%]
+  1.20        0        0      +0.00%   [ +0.00% ,  +0.00%]
+  1.35        0        0      +0.00%   [ +0.00% ,  +0.00%]
+
+ECE gagnant : modele 0.926 pt | marche 0.868 pt
+ECE chute   : 1.987 pt
+couverture historique : 85.1%
+
+parametres -> apex_obst_fit.json
+
+[exited with code 0]

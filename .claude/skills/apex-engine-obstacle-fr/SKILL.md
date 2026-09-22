@@ -51,7 +51,16 @@ Taux de non-terminaison de base : **19,3 % des partants**. Codes relevés dans l
 | DISTANCE | 35 |
 | RESTE_AU_POTEAU | 6 |
 
-Régression logistique, log-loss test **0,4543 → 0,4404** (gain +0,0140). Coefficients :
+Régression logistique, log-loss test **0,4543 → 0,4404** (gain +0,0139). Coefficients :
+
+> **Correctif v1.0.1 (22/09/2026).** Le parseur de musique ne comptait pas le code `J`
+> (jockey désarçonné) parmi les non-terminaisons, alors qu'il représente 4 792 des
+> 31 872 entrées de non-terminaison de la base, soit **15 % du total ignoré**. Le défaut
+> a été corrigé. Effet mesuré : la porte de chute est inchangée (+0,0139 contre +0,0140),
+> le modèle de victoire gagne un peu en log-loss (1,8478 contre 1,8491) mais **perd en
+> calibration** (ECE 1,053 contre 0,926). La correction est conservée parce qu'une
+> variable qui décrit mal la réalité est un défaut latent, mais elle n'améliore rien de
+> mesurable et le DCS passe de 51 à 50.
 
 | Variable | β | Lecture |
 |---|---|---|
@@ -91,16 +100,16 @@ Calculé, non décrété.
 | Composante | Barème | Mesure | Points |
 |---|---|---|---|
 | Intégrité des données | 25 | API officielle, 85,1 % des partants ont un passé en base | 20 |
-| Calibration gagnant | 25 | ECE 0,926 pt — **moins bon que le marché (0,868)** | 15 |
-| Pouvoir discriminant vs marché | 30 | gain de log-loss +0,0045 (0,24 % relatif) | 5 |
+| Calibration gagnant | 25 | ECE 1,053 pt — **moins bon que le marché (0,868)** | 13 |
+| Pouvoir discriminant vs marché | 30 | gain de log-loss +0,0059 (0,32 % relatif) | 6 |
 | Taille d'échantillon | 20 | 2 941 courses, test 648 seulement | 11 |
-| **DCS moteur** | **100** | | **51** |
+| **DCS moteur** | **100** | | **50** |
 
 Modificateurs par course : −10 si les cotes ne sont pas définitives · −8 si plus de 20 %
 du lot est sans historique · −6 en cross · −5 si moins de 8 partants · −5 si plus d'un
 quart du lot est inédit sur les obstacles.
 
-**Le DCS moteur de 51 est déjà sous la gate de 60.** Aucune course d'obstacle ne peut
+**Le DCS moteur de 50 est déjà sous la gate de 60.** Aucune course d'obstacle ne peut
 donc produire un signal de pari avec cette version. C'est le résultat de la mesure, pas
 un choix de prudence.
 
@@ -111,7 +120,7 @@ un choix de prudence.
 - **G-OBST-3 — Chute.** Un cheval dont P(chute) > 25 % ne peut pas être base d'un
   combiné. Signaler explicitement tout partant au-dessus de 22 %.
 - **G-OBST-4 — Pari simple.** **Fermée.** Un BET exigerait DCS ≥ 65 ; le moteur plafonne
-  à 51. Sortie maximale : INDICATIF. Cette gate ne se rouvrira qu'après une
+  à 50. Sortie maximale : INDICATIF. Cette gate ne se rouvrira qu'après une
   recalibration qui améliorerait l'ECE sous celui du marché.
 - **G-OBST-5 — Placé.** NO BET. Le modèle est battu par le marché.
 - **G-OBST-6 — Combinés.** INDICATIF seulement. Aucun rapport historique Couplé/Trio

@@ -4,7 +4,7 @@ import re, math
 
 MUS = re.compile(r'\((\d{2})\)|([0-9A-Z])([a-z])')
 # codes de non-terminaison en obstacle
-FALL_CODES = {'T', 'A', 'D', 'R'}
+FALL_CODES = {'T', 'A', 'D', 'R', 'J'}   # J = jockey desarconne : non-terminaison
 OBST_DISC = {'h', 's', 'c'}          # haies, steeple, cross
 PTS = {'1': 1.0, '2': .72, '3': .55, '4': .40, '5': .30,
        '6': .20, '7': .14, '8': .10, '9': .07, '0': .03}

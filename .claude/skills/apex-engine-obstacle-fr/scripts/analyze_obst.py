@@ -18,7 +18,8 @@ def fetch(dmy, r, c):
     course = dict(hippo=reu['hippodrome']['libelleCourt'], distance=crs.get('distance'),
                   montantPrix=crs.get('montantPrix'), discipline=crs.get('discipline'),
                   specialite=crs.get('specialite'),
-                  particularite=crs.get('categorieParticularite'), libelle=crs.get('libelle'))
+                  particularite=crs.get('categorieParticularite'), libelle=crs.get('libelle'),
+                  penetrometre=crs.get('penetrometre'))
     field = []
     for p in parts:
         if p.get('statut') != 'PARTANT': continue
@@ -46,15 +47,19 @@ def main():
     odds = np.array([p['coteFinale'] for p in field], float)
     q = 1/odds; q = q/q.sum()
     ml = np.log(q); ml -= ml.mean()
-    Xc = (X - X.mean(0)) / np.asarray(fit['sd'])
+    Xw = X.copy()
+    for j in fit.get('pen_idx', []): Xw[:, j] = 0.0     # terrain : hors modele de victoire
+    Xc = (Xw - Xw.mean(0)) / np.asarray(fit['sd'])
     eta = Xc @ np.asarray(fit['beta']) + ml
     eta -= eta.max(); e = np.exp(eta); pw = e/e.sum()
     Z = np.hstack([(X - np.asarray(fit['fault_mu']))/np.asarray(fit['fault_sd']),
                    np.ones((len(X), 1))])
     pf = 1/(1+np.exp(-np.clip(Z @ np.asarray(fit['fault_b']), -30, 30)))
     pp = model.place_probs(pw, fit['stern'])
+    pe = course.get('penetrometre') or {}
     print(f"\n{course['libelle']} | {course['hippo']} {course['distance']}m "
-          f"{course['discipline']} {course['particularite']} | {len(field)} partants")
+          f"{course['discipline']} {course['particularite']} | {len(field)} partants"
+          f" | terrain {pe.get('valeurMesure','?')} {pe.get('intitule','')}")
     print(f"APEX-OBSTACLE v1.0 (test {fit['n_test']} courses, modele "
           f"{fit['ll_model_test']:.4f} vs marche {fit['ll_market_test']:.4f})\n")
     print(f"{'N':>3} {'Cheval':<22} {'cote':>6} {'p_mar':>7} {'p_APEX':>7} {'EV':>5} "

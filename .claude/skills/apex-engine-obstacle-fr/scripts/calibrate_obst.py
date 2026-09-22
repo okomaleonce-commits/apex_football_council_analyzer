@@ -21,6 +21,15 @@ n = len(races)
 tr, va, te = races[:int(n*.60)], races[int(n*.60):int(n*.78)], races[int(n*.78):]
 print(f"\napprentissage {len(tr)} | validation {len(va)} | test {len(te)} (test depuis {te[0]['date']})")
 
+# --- le penetrometre n'a sa place que dans le modele de chute -------------------
+# Constant par course, il ne survit pas au centrage intra-course du logit
+# conditionnel ; ses interactions n'y apportent que du bruit (ECE degradee).
+PEN = [i for i, f in enumerate(feats) if f.startswith('pen') or f == 'has_pen']
+print(f"variables terrain exclues du modele de victoire : {[feats[i] for i in PEN]}")
+for r in races:
+    r['X_all'] = [list(row) for row in r['X']]
+    r['X'] = [[0.0 if j in PEN else v for j, v in enumerate(row)] for row in r['X']]
+
 def market_p(rs):
     return [(lambda q: q/q.sum())(1.0/np.asarray(r['odds'], float)) for r in rs]
 pm_va, pm_te = market_p(va), market_p(te)
@@ -66,6 +75,7 @@ for d, pp, yy, k in evaluate.calib_table(pB, te):
     print(f"  D{d:<3} predit {pp*100:6.2f}%   observe {yy*100:6.2f}%   n={k}")
 
 print("\n=== PORTE DE CHUTE ===")
+for r in races: r['X'] = r['X_all']          # la porte de chute voit tout
 bf, mu, sdf = model.fit_fault(tr, feats, lam=5.0)
 pf = model.predict_fault(te, bf, mu, sdf)
 yf = np.concatenate([r['y_fault'] for r in te]); pfa = np.concatenate(pf)
@@ -136,7 +146,7 @@ hn = [r['X'][j][feats.index('h_n')] for r in te for j in range(r['n'])]
 cov = float(np.mean(np.asarray(hn) > 0))
 print(f"couverture historique : {cov*100:.1f}%")
 
-json.dump(dict(feats=feats, beta=bestB[2].tolist(), sd=bestB[3].tolist(), l2=bestB[1],
+json.dump(dict(feats=feats, pen_idx=PEN, beta=bestB[2].tolist(), sd=bestB[3].tolist(), l2=bestB[1],
                fault_b=bf.tolist(), fault_mu=mu.tolist(), fault_sd=sdf.tolist(),
                stern=stern, fall_codes=sorted(codes),
                ll_market_test=ll_m_te, ll_model_test=ll_B, ll_fonda_test=ll_A,

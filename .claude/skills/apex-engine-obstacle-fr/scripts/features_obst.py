@@ -36,6 +36,15 @@ def musique_features(m):
         mus_plat=sum(d == 'p' for v, d in perf) / n,
     )
 
+def penetro(course):
+    """Valeur du penetrometre : 1 (tres leger) a 5+ (tres lourd). 4,0 = tres souple."""
+    pe = course.get('penetrometre') or {}
+    v = pe.get('valeurMesure')
+    if not v: return None
+    try: return float(str(v).replace(',', '.'))
+    except ValueError: return None
+
+
 def runner_features(p, course, field):
     g = p.get('gains') or {}
     car = (g.get('gainsCarriere') or 0) / 100.0
@@ -94,4 +103,15 @@ def runner_features(p, course, field):
     f['steeple'] = 1.0 if d == 'STEEPLECHASE' else 0.0
     f['cross'] = 1.0 if d == 'CROSS' else 0.0
     f['log_distance'] = math.log((course.get('distance') or 3500) / 3500.0)
+
+    # --- terrain : le penetrometre est constant par course, donc il ne survit au
+    # centrage intra-course que sous forme d'interactions avec les variables du cheval.
+    pen = penetro(course)
+    f['has_pen'] = 1.0 if pen is not None else 0.0
+    pc = (pen - 3.7) if pen is not None else 0.0      # centre sur la mediane de la base
+    f['pen'] = pc
+    f['pen_x_poids'] = pc * f['poids_rel']            # terrain lourd : les kilos pesent plus
+    f['pen_x_valeur'] = pc * f['valeur_rel']
+    f['pen_x_exp'] = pc * f['log_experience']
+    f['pen_x_musobst'] = pc * f['mus_obst']
     return f

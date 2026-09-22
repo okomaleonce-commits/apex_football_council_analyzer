@@ -24,7 +24,7 @@ nettement moins favorable.** Cette section dit d'emblée ce qu'il faut en attend
 
 | Usage | Statut | Preuve |
 |---|---|---|
-| Estimer P(non-terminaison) | **Validé** | log-loss test 0,4404 vs base 0,4543 |
+| Estimer P(non-terminaison) | **Validé** | log-loss test 0,4368 vs base 0,4543 |
 | Estimer P(victoire) | **Équivalent au marché, pas mieux** | 1,8491 vs 1,8537, mais **ECE 0,926 pt contre 0,868 pt pour le marché brut** |
 | Estimer P(top 3) | **Sans gain** | 0,5195 vs marché+Stern 0,5191 |
 | Générer un profit | **Non testable** | 58 paris au seuil 1,00, IC 95 % [−71,9 % ; +215,0 %] |
@@ -51,7 +51,7 @@ Taux de non-terminaison de base : **19,3 % des partants**. Codes relevés dans l
 | DISTANCE | 35 |
 | RESTE_AU_POTEAU | 6 |
 
-Régression logistique, log-loss test **0,4543 → 0,4404** (gain +0,0139). Coefficients :
+Régression logistique, log-loss test **0,4543 → 0,4368** (gain **+0,0175**). Coefficients :
 
 > **Correctif v1.0.1 (22/09/2026).** Le parseur de musique ne comptait pas le code `J`
 > (jockey désarçonné) parmi les non-terminaisons, alors qu'il représente 4 792 des
@@ -64,13 +64,15 @@ Régression logistique, log-loss test **0,4543 → 0,4404** (gain +0,0139). Coef
 
 | Variable | β | Lecture |
 |---|---|---|
-| `log_distance` | **+0,254** | plus la course est longue, plus on chute — le facteur dominant |
-| `mus_score` | −0,218 | un cheval en forme termine plus souvent |
-| `log_experience` | −0,202 | l'expérience protège |
-| `has_valeur` | +0,150 | les handicaps chutent davantage |
-| `j_fall` | +0,125 | le taux de chute du jockey compte |
-| `poids_rel` | **+0,122** | plus on porte lourd, plus on tombe |
-| `valeur_rel` | −0,116 | les mieux notés chutent moins |
+| `log_distance` | **+0,262** | plus la course est longue, plus on chute — le facteur dominant |
+| `mus_score` | −0,237 | un cheval en forme termine plus souvent |
+| **`pen`** | **+0,223** | **terrain lourd = plus de non-terminaisons** |
+| `log_experience` | −0,156 | l'expérience protège |
+| `has_valeur` | +0,146 | les handicaps chutent davantage |
+| `j_fall` | +0,126 | le taux de chute du jockey compte |
+| **`pen_x_exp`** | **−0,117** | l'expérience protège **davantage** sur terrain lourd |
+| `poids_rel` | **+0,102** | plus on porte lourd, plus on tombe |
+| `valeur_rel` | −0,098 | les mieux notés chutent moins |
 
 Ces signes sont tous physiquement cohérents, ce qui est le meilleur argument de validité
 externe dont dispose ce moteur. **Attention cependant : la discrimination est faible.**
@@ -165,8 +167,17 @@ le code, pas seulement dans ce document.
 
 ## 9. Ce que le moteur ne capte pas
 
-L'état du terrain (le pénétromètre n'est pas exposé par l'API alors qu'il est décisif en
-obstacle), le détail du parcours et de la nature des haies, la condition physique, le
+> **Correctif v1.0.2 (22/09/2026).** Cette section affirmait que le pénétromètre n'était
+> pas exposé par l'API. **C'était faux** : il est présent sur 4 037 des 4 040 courses
+> aspirées (99,9 %), sous `course.penetrometre.valeurMesure`, et le harvester le
+> collectait déjà sans que personne ne l'utilise. Il est désormais intégré **au seul
+> modèle de chute** : étant constant par course, il ne survit pas au centrage
+> intra-course du logit conditionnel et ses interactions n'apportaient que du bruit au
+> modèle de victoire (ECE dégradée de 1,053 à 1,119). Effet mesuré sur la porte de
+> chute : gain de log-loss **+0,0140 → +0,0175**, ECE **2,007 → 1,876**. `pen` devient
+> le troisième coefficient du modèle.
+
+Le détail du parcours et de la nature des haies, la condition physique, le
 matériel, la tactique de course, et surtout **la qualité du saut** — qui est au cœur de
 la discipline et qu'aucune variable disponible ne mesure. C'est la raison principale
 pour laquelle le marché conserve ici tout son avantage.

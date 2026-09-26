@@ -70,9 +70,14 @@ print(f"\n{course['libelle']} | {course['hippo']} {course['distance']}m {course[
       f"| {len(field)} partants | terrain {pe.get('valeurMesure','?')} {pe.get('intitule','')}")
 print(f"tirages executes : {sim['N']:,} | erreur Monte-Carlo max sur P(victoire) : "
       f"{sim['se_p_win'].max()*100:.3f} pt | tau={sh['tau']} cf={sh['cf']} | graine {SEED}")
-# regle de production issue du backtest : Harville/Stern pour le top 3
+# regle de production issue du backtest, par DISCIPLINE (elles divergent) :
+#   obstacle : Harville/Stern l'emporte en test (0,5055 contre 0,5077 pour le simulateur)
+#   trot     : le simulateur l'emporte en test (0,4707 contre 0,4719 pour Stern)
+# ecarts faibles dans les deux cas, mais de signe coherent entre validation et test.
 STERN = 0.82 if DISC == 'obst' else 0.70
 p3_stern = model.place_probs(sim['p_win'], STERN)
+TOP3_RULE = 'stern' if DISC == 'obst' else 'simulateur'
+p3_prod = p3_stern if TOP3_RULE == 'stern' else sim['p_top3']
 print(f"\n{'N':>3} {'Cheval':<20} {'cote':>6} {'P_gag':>7} {'±MC':>6} {'±modele':>14} "
       f"{'P_top3*':>8} {'P_top5':>7} {'P_nonclasse':>11}")
 recs = []
@@ -80,15 +85,19 @@ for i in np.argsort(-sim['p_win']):
     p = field[i]
     mu = f"[{lo_m[i]*100:4.1f};{hi_m[i]*100:4.1f}]" if lo_m is not None else "n/d"
     print(f"{p['numPmu']:>3} {p['nom'][:20]:<20} {odds[i]:>6} {sim['p_win'][i]*100:>6.1f}% "
-          f"{sim['se_p_win'][i]*100:>5.2f} {mu:>14} {sim['p_top3'][i]*100:>6.1f}% "
+          f"{sim['se_p_win'][i]*100:>5.2f} {mu:>14} {p3_prod[i]*100:>6.1f}% "
           f"{sim['p_top5'][i]*100:>6.1f}% {sim['p_unplaced'][i]*100:>10.1f}%")
     recs.append(dict(num=int(p['numPmu']), nom=p['nom'], cote=float(odds[i]),
                      p_win=float(sim['p_win'][i]), se_win=float(sim['se_p_win'][i]),
-                     p_top3=float(p3_stern[i]), p_top3_sim=float(sim['p_top3'][i]), p_top5=float(sim['p_top5'][i]),
+                     p_top3=float(p3_prod[i]), p_top3_regle=TOP3_RULE,
+                     p_top3_stern=float(p3_stern[i]), p_top3_sim=float(sim['p_top3'][i]), p_top5=float(sim['p_top5'][i]),
                      p_unplaced=float(sim['p_unplaced'][i]), p_fault=float(pf[i]),
                      model_lo=float(lo_m[i]) if lo_m is not None else None,
                      model_hi=float(hi_m[i]) if hi_m is not None else None))
-print("  * P_top3 par Harville/Stern (valide superieur au simulateur : 0,5055 vs 0,5077)")
+_note = ("Harville/Stern, superieur au simulateur en test obstacle : 0,5055 contre 0,5077"
+         if TOP3_RULE == 'stern' else
+         "simulateur, superieur a Harville/Stern en test trot : 0,4707 contre 0,4719")
+print(f"  * P_top3 par {_note}")
 print(f"\n-- TRIO issu des arrivees simulees (jamais un produit de marginales) --")
 for k, v, se in exo['trio'][:5]:
     print(f"  {'-'.join(map(str,k)):>10}  {v*100:5.2f}% ±{se*100:.3f}  rapport min rentable {1/v:6.1f}")
@@ -105,7 +114,19 @@ rec = dict(produit_le=datetime.datetime.utcnow().isoformat()+'Z', course=f"{DMY}
 os.makedirs('/tmp/bt/predictions', exist_ok=True)
 fn = f"/tmp/bt/predictions/{DMY}_R{RN}C{CN}.json"
 if os.path.exists(fn):
-    print(f"\nREFUS de reecrire {fn} : un enregistrement scelle existe deja.")
+    # jamais d'ecrasement : une correction s'empile en v2, v3... et cite la precedente
+    v = 2
+    while os.path.exists(f"{fn[:-5]}_v{v}.json"): v += 1
+    prev = fn if v == 2 else f"{fn[:-5]}_v{v-1}.json"
+    rec['corrige_enregistrement'] = os.path.basename(prev)
+    rec['motif_correction'] = ("regle top 3 rendue dependante de la discipline : le simulateur "
+                               "en trot, Harville/Stern en obstacle. L'enregistrement precedent "
+                               "affichait le simulateur mais stockait Stern sous p_top3 et citait "
+                               "en note les chiffres de l'obstacle.")
+    fn = f"{fn[:-5]}_v{v}.json"
+    json.dump(rec, open(fn, 'w'), ensure_ascii=False, indent=1)
+    print(f"\nenregistrement precedent conserve intact -> {os.path.basename(prev)}")
+    print(f"correction scellee -> {fn}")
 else:
     json.dump(rec, open(fn, 'w'), indent=1, ensure_ascii=False)
     print(f"\nenregistrement scelle -> {fn}")

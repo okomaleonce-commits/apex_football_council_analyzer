@@ -1,0 +1,305 @@
+{
+ "produit_le": "2026-09-26T16:43:34.476074Z",
+ "course": "26092026-R4C6",
+ "libelle": "PRIX DE LA PLACE DE L'ALMA",
+ "discipline": "ATTELE",
+ "moteur": "trot",
+ "version": "v1.0.2+backtest1.0",
+ "empreinte_parametres": "6c13785d9f288168bab7fdc72010f0d9a94320e53a4f757f782947288725467a",
+ "graine": 20260926,
+ "tirages": 40000,
+ "tau": 0.7,
+ "cf": 0.0,
+ "cotes_horodatage": "2026-09-26T16:43:12Z",
+ "terrain": {},
+ "partants": [
+  {
+   "num": 8,
+   "nom": "NYANNIC DE MUZE",
+   "cote": 5.2,
+   "p_win": 0.1556,
+   "se_win": 0.001812378547654987,
+   "p_top3": 0.37524958166137284,
+   "p_top3_sim": 0.42725,
+   "p_top5": 0.635025,
+   "p_unplaced": 0.17675,
+   "p_fault": 0.1761361992353065,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 4,
+   "nom": "NAMARA D'ECHAL",
+   "cote": 5.4,
+   "p_win": 0.14685,
+   "se_win": 0.0017697816072894418,
+   "p_top3": 0.362937692476847,
+   "p_top3_sim": 0.416125,
+   "p_top5": 0.617425,
+   "p_unplaced": 0.24385,
+   "p_fault": 0.24494957772714843,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 6,
+   "nom": "NOISETTE AMERE",
+   "cote": 6.4,
+   "p_win": 0.1403,
+   "se_win": 0.001736490066196752,
+   "p_top3": 0.3534273435786944,
+   "p_top3_sim": 0.3421,
+   "p_top5": 0.483425,
+   "p_unplaced": 0.295525,
+   "p_fault": 0.29527230032153373,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 2,
+   "nom": "NAPA VALLEY",
+   "cote": 6.7,
+   "p_win": 0.124825,
+   "se_win": 0.001652601883205692,
+   "p_top3": 0.3298757004995767,
+   "p_top3_sim": 0.3617,
+   "p_top5": 0.545175,
+   "p_unplaced": 0.2721,
+   "p_fault": 0.2733171348612481,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 14,
+   "nom": "NEW FAIRY",
+   "cote": 9.3,
+   "p_win": 0.10695,
+   "se_win": 0.001545248341691393,
+   "p_top3": 0.30055127002357823,
+   "p_top3_sim": 0.31835,
+   "p_top5": 0.484625,
+   "p_unplaced": 0.34575,
+   "p_fault": 0.3438494714941881,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 5,
+   "nom": "NATRICIA",
+   "cote": 9.3,
+   "p_win": 0.08865,
+   "se_win": 0.001421189444620245,
+   "p_top3": 0.26775091565856085,
+   "p_top3_sim": 0.289125,
+   "p_top5": 0.499475,
+   "p_unplaced": 0.1614,
+   "p_fault": 0.16269588102744298,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 7,
+   "nom": "NOBILITY",
+   "cote": 16.0,
+   "p_win": 0.0531,
+   "se_win": 0.0011211644616201497,
+   "p_top3": 0.19318410253573756,
+   "p_top3_sim": 0.182625,
+   "p_top5": 0.35395,
+   "p_unplaced": 0.275625,
+   "p_fault": 0.27626311686557686,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 15,
+   "nom": "NEW GIRL DU CHENE",
+   "cote": 16.0,
+   "p_win": 0.051675,
+   "se_win": 0.001106850197350572,
+   "p_top3": 0.18979917784295333,
+   "p_top3_sim": 0.181275,
+   "p_top5": 0.3582,
+   "p_unplaced": 0.139075,
+   "p_fault": 0.14188030669696317,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 10,
+   "nom": "NAVETTE SPATIALE",
+   "cote": 19.0,
+   "p_win": 0.047175,
+   "se_win": 0.001060065084971201,
+   "p_top3": 0.1788502345054337,
+   "p_top3_sim": 0.167175,
+   "p_top5": 0.3272,
+   "p_unplaced": 0.221225,
+   "p_fault": 0.22208237419599344,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 1,
+   "nom": "NORIA BERRY",
+   "cote": 34.0,
+   "p_win": 0.021825,
+   "se_win": 0.0007305591929303197,
+   "p_top3": 0.10708578331934407,
+   "p_top3_sim": 0.078575,
+   "p_top5": 0.18425,
+   "p_unplaced": 0.218575,
+   "p_fault": 0.21815449503532114,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 11,
+   "nom": "NOTRE DAME D'ELCE",
+   "cote": 45.0,
+   "p_win": 0.021275,
+   "se_win": 0.0007214979967920908,
+   "p_top3": 0.10525678671174721,
+   "p_top3_sim": 0.082975,
+   "p_top5": 0.1847,
+   "p_unplaced": 0.263275,
+   "p_fault": 0.26163793500297766,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 9,
+   "nom": "NOMINEE",
+   "cote": 52.0,
+   "p_win": 0.0169,
+   "se_win": 0.000644484096002376,
+   "p_top3": 0.09006118699888396,
+   "p_top3_sim": 0.0559,
+   "p_top5": 0.1035,
+   "p_unplaced": 0.320625,
+   "p_fault": 0.3234474655590722,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 3,
+   "nom": "NOUBADARCHE",
+   "cote": 62.0,
+   "p_win": 0.013775,
+   "se_win": 0.0005827788897815363,
+   "p_top3": 0.07836049693019284,
+   "p_top3_sim": 0.0562,
+   "p_top5": 0.126475,
+   "p_unplaced": 0.327375,
+   "p_fault": 0.32807764682152857,
+   "model_lo": null,
+   "model_hi": null
+  },
+  {
+   "num": 12,
+   "nom": "NOIRE EBENE",
+   "cote": 73.0,
+   "p_win": 0.0111,
+   "se_win": 0.0005238508852717537,
+   "p_top3": 0.06760972725707734,
+   "p_top3_sim": 0.040625,
+   "p_top5": 0.0963,
+   "p_unplaced": 0.25015,
+   "p_fault": 0.2524006038588524,
+   "model_lo": null,
+   "model_hi": null
+  }
+ ],
+ "trio": [
+  {
+   "combi": [
+    2,
+    4,
+    8
+   ],
+   "p": 0.02515,
+   "se": 0.0007829028914878268
+  },
+  {
+   "combi": [
+    2,
+    6,
+    14
+   ],
+   "p": 0.02455,
+   "se": 0.0007737457188896103
+  },
+  {
+   "combi": [
+    2,
+    5,
+    6
+   ],
+   "p": 0.023175,
+   "se": 0.0007522951444579448
+  },
+  {
+   "combi": [
+    4,
+    8,
+    14
+   ],
+   "p": 0.0217,
+   "se": 0.0007285106382201977
+  },
+  {
+   "combi": [
+    4,
+    6,
+    8
+   ],
+   "p": 0.02015,
+   "se": 0.0007025663224920478
+  },
+  {
+   "combi": [
+    2,
+    4,
+    6
+   ],
+   "p": 0.019925,
+   "se": 0.0006987130021510978
+  },
+  {
+   "combi": [
+    5,
+    6,
+    14
+   ],
+   "p": 0.01885,
+   "se": 0.0006799756889036548
+  },
+  {
+   "combi": [
+    4,
+    5,
+    8
+   ],
+   "p": 0.01815,
+   "se": 0.0006674686790404476
+  },
+  {
+   "combi": [
+    4,
+    6,
+    14
+   ],
+   "p": 0.017825,
+   "se": 0.0006615751917771706
+  },
+  {
+   "combi": [
+    2,
+    4,
+    14
+   ],
+   "p": 0.017675,
+   "se": 0.0006588359882208925
+  }
+ ]
+}

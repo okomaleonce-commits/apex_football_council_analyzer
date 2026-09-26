@@ -87,12 +87,24 @@ Régression logistique sur les mêmes variables, taux de base **21,9 %** des par
 | Variable | β | Lecture |
 |---|---|---|
 | `h_fault` | +0,314 | taux de faute historique du cheval (dominant) |
+| `log_n` | *(v1.2)* | taille du champ — ajoutée le 26/09 après audit, voir ci-dessous |
+| `hip_fault` | *(v1.2)* | difficulté de l'hippodrome, rétrécie, calculée sur le passé seul |
 | `recul_m` | −0,126 | **un cheval reculé faute moins** (il est plus riche, donc plus sûr) |
 | `place_rate` | −0,123 | régularité carrière |
 | `d_fault` | +0,107 | taux de faute du driver |
 | `mus_fault` | +0,100 | fautes dans la musique |
 
 C'est la composante qui apporte le gain le plus net du moteur.
+
+> **Recalibration v1.2 (26/09/2026), après audit post-course.** Un audit a révélé que
+> la porte de faute ignorait **la taille du champ** et **la difficulté de l'hippodrome**.
+> Sur le trot le biais était modéré (−3,32 pt à +1,23 pt selon la taille du champ, jusqu'à
+> ±4,3 pt par hippodrome) — bien plus faible qu'en obstacle où il atteignait +13 pt. Les
+> deux variables sont ajoutées, toutes deux connues avant la course. **Effet mesuré sur
+> le trot : gain de la porte +0,0267 → +0,0274, amplitude Q5/Q1 inchangée à 3,65.** C'est
+> dans le bruit. La correction est conservée parce qu'elle est juste, pas parce qu'elle
+> améliore quelque chose de mesurable. Paramètres de production ré-estimés sur la base
+> jusqu'au 25/09/2026 (10 032 courses, gain de la porte +0,0301 sur le découpage fixe).
 
 ### Placé
 

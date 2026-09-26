@@ -1,99 +1,96 @@
-14809 /tmp/turf/hist.jsonl
-=== CALIBRATION ===
-periode : 2025-04-10 -> 2026-09-21
-apprentissage 6019 | validation 1805 | test 2208 (test a partir du 2026-05-31)
+courses exploitables : 10089   variables : 52
+periode : 2025-04-10 -> 2026-09-25
+apprentissage 6053 | validation 1816 | test 2220 (test a partir du 2026-06-02)
 
 === REFERENCE : marche PMU (cotes finales) ===
-  validation log-loss 1.9001 | test log-loss 1.8857 | test Brier 0.06793
+  validation log-loss 1.9018 | test log-loss 1.8860 | test Brier 0.06773
 
 === A. modele fondamental seul (sans cotes) ===
-  L2=2.0    validation 2.0689
-  L2=10.0   validation 2.0689
-  L2=40.0   validation 2.0687
-  L2=150.0  validation 2.0685
-  -> L2=150.0  TEST 2.0558
+  L2=2.0    validation 2.0666
+  L2=10.0   validation 2.0666
+  L2=40.0   validation 2.0663
+  L2=150.0  validation 2.0661
+  -> L2=150.0  TEST 2.0594
 
 === B. residuel : marche en offset, variables sur le residu ===
-  L2=10.0    validation 1.8912   gain vs marche +0.0089
-  L2=40.0    validation 1.8908   gain vs marche +0.0094
-  L2=150.0   validation 1.8898   gain vs marche +0.0103
-  L2=600.0   validation 1.8891   gain vs marche +0.0110
-  L2=2500.0  validation 1.8906   gain vs marche +0.0095
-  -> L2=600.0  TEST 1.8788  (marche 1.8857, gain +0.0069)
+  L2=10.0    validation 1.8936   gain vs marche +0.0082
+  L2=40.0    validation 1.8931   gain vs marche +0.0087
+  L2=150.0   validation 1.8921   gain vs marche +0.0097
+  L2=600.0   validation 1.8912   gain vs marche +0.0106
+  L2=2500.0  validation 1.8925   gain vs marche +0.0093
+  -> L2=600.0  TEST 1.8792  (marche 1.8860, gain +0.0068)
 
 === C. marche recalibre (exposant unique) ===
-  tau=0.85  validation 1.9238
-  tau=0.90  validation 1.9137
-  tau=0.95  validation 1.9059
-  tau=1.00  validation 1.9001
-  tau=1.05  validation 1.8964
-  tau=1.10  validation 1.8946
-  tau=1.15  validation 1.8945
-  -> tau=1.15  TEST 1.8835
+  tau=0.85  validation 1.9248
+  tau=0.90  validation 1.9149
+  tau=0.95  validation 1.9073
+  tau=1.00  validation 1.9018
+  tau=1.05  validation 1.8982
+  tau=1.10  validation 1.8966
+  tau=1.15  validation 1.8968
+  -> tau=1.1  TEST 1.8826
 
 === biais favori-outsider (jeu de test) ===
   cote        n     implicite   observe     ROI mise plate
-  1-2          329    59.89%    51.37%    -14.32%
-  2-3         1062    40.88%    36.16%    -11.81%
-  3-5         2461    26.01%    23.28%    -10.59%
-  5-8         2915    15.97%    14.20%    -10.99%
-  8-13        3674    10.10%     7.81%    -22.65%
-  13-21        3649     6.31%     5.78%     -7.84%
-  21-34        3350     3.88%     2.60%    -33.94%
-  34-60        3663     2.27%     1.47%    -36.99%
-  60-+inf      5555     1.04%     0.52%    -55.09%
+  1-2          333    59.89%    52.55%    -12.16%
+  2-3         1061    40.85%    35.82%    -12.62%
+  3-5         2483    26.01%    23.24%    -10.73%
+  5-8         2938    15.96%    14.33%    -10.08%
+  8-13        3667    10.10%     7.74%    -23.23%
+  13-21        3673     6.32%     5.80%     -7.65%
+  21-34        3383     3.88%     2.45%    -37.22%
+  34-60        3677     2.27%     1.52%    -35.22%
+  60-+inf      5669     1.04%     0.55%    -53.29%
 
 === calibration du modele retenu (deciles, jeu de test) ===
-  D1   predit   0.45%   observe   0.30%   n=2665
-  D2   predit   0.88%   observe   0.56%   n=2666
-  D3   predit   1.43%   observe   1.43%   n=2666
-  D4   predit   2.25%   observe   1.73%   n=2666
-  D5   predit   3.43%   observe   3.38%   n=2666
-  D6   predit   5.06%   observe   5.78%   n=2665
-  D7   predit   7.31%   observe   7.91%   n=2666
-  D8   predit  10.70%   observe  10.73%   n=2666
-  D9   predit  17.11%   observe  17.78%   n=2666
-  D10  predit  34.19%   observe  33.23%   n=2666
+  D1   predit   0.45%   observe   0.30%   n=2688
+  D2   predit   0.87%   observe   0.60%   n=2688
+  D3   predit   1.41%   observe   1.45%   n=2689
+  D4   predit   2.23%   observe   1.75%   n=2688
+  D5   predit   3.41%   observe   3.20%   n=2689
+  D6   predit   5.02%   observe   5.80%   n=2688
+  D7   predit   7.28%   observe   7.78%   n=2688
+  D8   predit  10.67%   observe  10.64%   n=2689
+  D9   predit  17.10%   observe  17.97%   n=2688
+  D10  predit  34.14%   observe  33.10%   n=2689
 
 === porte de faute ===
-  taux de base 21.9%  log-loss 0.5313 -> 0.5022  (gain +0.0291)
-  Q1  predit  10.7%  observe   9.8%
-  Q2  predit  15.3%  observe  15.4%
-  Q3  predit  19.7%  observe  21.3%
-  Q4  predit  26.1%  observe  27.3%
-  Q5  predit  39.5%  observe  37.9%
+  taux de base 21.9%  log-loss 0.5309 -> 0.5002  (gain +0.0306)
+  Q1  predit  10.5%  observe   9.6%
+  Q2  predit  15.3%  observe  15.1%
+  Q3  predit  19.8%  observe  21.2%
+  Q4  predit  26.3%  observe  27.1%
+  Q5  predit  40.0%  observe  38.5%
 
 === PLACE : exposant de Stern ===
-  lambda=0.55  validation 0.4695
-  lambda=0.62  validation 0.4673
-  lambda=0.70  validation 0.4666
-  lambda=0.76  validation 0.4674
-  lambda=0.82  validation 0.4692
-  lambda=0.90  validation 0.4730
-  lambda=1.00  validation 0.4800
-  -> lambda=0.7  TEST 0.4788
+  lambda=0.55  validation 0.4699
+  lambda=0.62  validation 0.4677
+  lambda=0.70  validation 0.4671
+  lambda=0.76  validation 0.4679
+  lambda=0.82  validation 0.4697
+  lambda=0.90  validation 0.4736
+  lambda=1.00  validation 0.4806
+  -> lambda=0.7  TEST 0.4775
   calibration place (deciles, test) :
-    D1   predit   4.36%  observe   2.66%  n=2665
-    D2   predit   6.99%  observe   6.00%  n=2666
-    D3   predit   9.76%  observe  10.24%  n=2666
-    D4   predit  13.12%  observe  14.03%  n=2666
-    D5   predit  17.25%  observe  16.69%  n=2666
-    D6   predit  22.13%  observe  25.03%  n=2665
-    D7   predit  27.94%  observe  28.96%  n=2666
-    D8   predit  35.37%  observe  37.51%  n=2666
-    D9   predit  46.08%  observe  46.74%  n=2666
-    D10  predit  65.47%  observe  60.84%  n=2666
+    D1   predit   4.30%  observe   2.57%  n=2688
+    D2   predit   6.93%  observe   5.84%  n=2688
+    D3   predit   9.69%  observe  10.38%  n=2689
+    D4   predit  13.05%  observe  14.06%  n=2688
+    D5   predit  17.16%  observe  16.81%  n=2689
+    D6   predit  22.02%  observe  24.55%  n=2688
+    D7   predit  27.84%  observe  28.76%  n=2688
+    D8   predit  35.30%  observe  37.30%  n=2689
+    D9   predit  46.01%  observe  46.76%  n=2688
+    D10  predit  65.42%  observe  60.88%  n=2689
 
 === BACKTEST rentabilite GAGNANT (mise plate, jeu de test) ===
   seuil EV    paris   gagnants      ROI
-  1.00        1661      297      +4.55%
-  1.05         809      149      -1.85%
-  1.10         372       68      -1.80%
-  1.15         148       26     -11.62%
-  1.25          35        6      -8.00%
+  1.00        1628      292      +3.86%
+  1.05         787      145      -2.99%
+  1.10         367       65      -6.84%
+  1.15         142       25     -12.68%
+  1.25          32        5     -12.19%
   1.40           5        1     +22.00%
   (rappel : la cote PMU est deja nette de prelevement ; ROI 0% = equilibre)
 
 parametres -> apex_trot_fit.json
-
-[exited with code 0]

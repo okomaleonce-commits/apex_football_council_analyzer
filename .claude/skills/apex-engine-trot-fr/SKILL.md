@@ -112,6 +112,14 @@ hors échantillon.
 | Taille d'échantillon | 20 | 10 032 courses, test 2 208 | 19 |
 | **DCS moteur** | **100** | | **72** |
 
+> **Révision v1.1 (26/09/2026) après évaluation progressive.** Le DCS ci-dessus repose
+> sur un découpage fixe 60/18/22. Le walk-forward sur 8 423 courses de prévision donne
+> une image nettement meilleure : ECE **0,351 pt contre 0,645 pt** pour le marché et un
+> gain de log-loss de **+0,0091, IC95 [+0,0058 ; +0,0122]** — strictement positif. Le DCS
+> recalculé sur ces mesures est de **82** pour l'attelé. **Cela ne rouvre pas la gate de
+> pari** : la règle pré-enregistrée déclenche 118 paris pour un ROI de −4,58 %,
+> IC95 [−44,04 % ; +42,06 %]. P2 et P3 échouent, G-TROT-4 reste fermée.
+
 Modificateurs à appliquer course par course :
 
 - −10 si les cotes utilisées ne sont pas les cotes de départ (une analyse à H−1 travaille
@@ -124,6 +132,12 @@ Modificateurs à appliquer course par course :
 
 ## 4. Gates de décision
 
+- **G-TROT-0 — Monté.** Le trot monté est **refusé au pricing** par le backtest
+  (`apex-backtest/REPORT.md`) : ECE 1,164 pt contre 0,923 pt pour le marché, et 693
+  courses évaluées seulement contre le seuil de 1 000. Sortie **INDICATIF obligatoire**
+  sur toute course montée, quel que soit le DCS. La porte de faute y reste valide
+  (gain +0,0220, amplitude 2,82) avec un taux de base de **28,7 %** contre 21,2 % en
+  attelé — la porte est donc plus utile encore en monté qu'en attelé.
 - **G-TROT-1 — Champ.** Moins de 6 partants déclarés partants : ABORT.
 - **G-TROT-2 — Cotes.** Un partant sans cote : ABORT (le modèle a besoin de l'offset).
 - **G-TROT-3 — Faute.** Un cheval dont P(faute) > 25 % ne peut pas être base d'un pari

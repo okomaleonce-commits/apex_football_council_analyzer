@@ -107,6 +107,14 @@ Calculé, non décrété.
 | Taille d'échantillon | 20 | 2 941 courses, test 648 seulement | 11 |
 | **DCS moteur** | **100** | | **50** |
 
+> **Révision v1.1 (26/09/2026) après évaluation progressive.** Le 50 ci-dessus vient d'un
+> découpage fixe qui pénalisait injustement le moteur. Sur 2 142 courses de prévision en
+> walk-forward, l'ECE ressort à **0,532 pt contre 0,723 pt** pour le marché — le moteur
+> est donc **mieux** calibré que les cotes brutes, à l'inverse de ce que disait le split
+> fixe. Le gain de log-loss reste faible, **+0,0028, IC95 [−0,0018 ; +0,0071]**, donc non
+> significatif. DCS recalculé : **63**. La gate de pari reste fermée : 21 paris,
+> ROI −89,05 %, IC95 entièrement négatif.
+
 Modificateurs par course : −10 si les cotes ne sont pas définitives · −8 si plus de 20 %
 du lot est sans historique · −6 en cross · −5 si moins de 8 partants · −5 si plus d'un
 quart du lot est inédit sur les obstacles.
@@ -116,6 +124,10 @@ donc produire un signal de pari avec cette version. C'est le résultat de la mes
 un choix de prudence.
 
 ## 5. Gates de décision
+
+- **G-OBST-0 — Backtest.** Le statut en vigueur est celui de `apex-backtest/REPORT.md` :
+  **VALIDÉ pour le pricing et pour le risque, REFUSÉ pour le pari.** Toute analyse cite
+  ce statut.
 
 - **G-OBST-1 — Champ.** Moins de 5 partants : ABORT.
 - **G-OBST-2 — Cotes.** Un partant sans cote : ABORT.

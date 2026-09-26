@@ -49,13 +49,29 @@ enregistrement existant.
 
 ## Règles de production issues des mesures
 
-1. **Top 3 : utiliser Harville/Stern, pas le simulateur.** Le simulateur à scénarios
-   partagés perd contre la formule fermée (0,5077 contre 0,5055 en test). Mesuré, assumé.
-2. **Top 5, combinés, non-terminaisons groupées, erreur numérique : utiliser le
-   simulateur.** Les probabilités de Trio et Tiercé se lisent **sur les arrivées
-   simulées**, jamais comme un produit de marginales.
-3. **Regroupement des non-terminaisons `cf = 0,4`** : validé en test. Les abandons se
-   corrèlent dans une même course.
+**Les deux paramètres de structure jointe s'inversent entre les disciplines.** Ils ont
+été estimés séparément, et le résultat interdit de transposer l'un à l'autre.
+
+| | **Trot** | **Obstacle** |
+|---|---|---|
+| Regroupement des non-terminaisons `cf` | **0,0** — aucun | **0,4** — réel, validé en test |
+| Scénarios partagés `tau` | **0,7** | 0,4, sans effet mesurable |
+| Top 3 en production | **simulateur** (test 0,4707 contre 0,4719) | **Harville/Stern** (test 0,5055 contre 0,5077) |
+
+Lecture physique : une chute d'obstacle peut en entraîner d'autres et reflète un terrain
+commun, donc les abandons se corrèlent ; une faute d'allure au trot est un événement
+individuel, et la mesure le confirme — la validation retient `cf = 0` et le test est
+identique avec ou sans regroupement (−6,2579 dans les deux cas).
+
+1. **Top 3 : simulateur en trot, Harville/Stern en obstacle.** L'écart est faible dans
+   les deux sens (0,0012 et 0,0022 en test) mais le signe est cohérent entre validation
+   et test dans chaque discipline.
+2. **Top 5, combinés, erreur numérique : toujours le simulateur.** Les probabilités de
+   Trio et Tiercé se lisent **sur les arrivées simulées**, jamais comme un produit de
+   marginales.
+3. **Ne jamais réutiliser `cf` ou `tau` d'une discipline pour l'autre.** `predict.py`
+   charge `params/shared_<discipline>.json` ; en son absence il retombe sur des valeurs
+   par défaut, ce qui doit être signalé dans la sortie.
 4. **Toujours reporter séparément** l'erreur Monte-Carlo et l'incertitude de modèle.
    Sur l'exemple exécuté, la seconde est **dix fois plus large** que la première.
 5. **Trot monté : sortie INDICATIF obligatoire**, quel que soit le DCS. Le moteur y est

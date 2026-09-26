@@ -82,42 +82,5 @@ def runner_features(p, course, field):
     f['corde'] = float(corde) if corde else 0.0
     f['has_corde'] = 1.0 if corde else 0.0
     f['monte'] = 1.0 if course.get('discipline') == 'MONTE' else 0.0
+    f['log_n'] = math.log(len(field) / 12.0)      # taille du champ, connue avant la course
     return f
-
-FEATS = None
-
-def build(path, min_runners=6):
-    """Charge le JSONL et renvoie (races, noms des variables)."""
-    global FEATS
-    races = []
-    for line in open(path):
-        line = line.strip()
-        if not line: continue
-        try: c = json.loads(line)
-        except json.JSONDecodeError: continue
-        field = [p for p in c['partants']
-                 if p.get('statut') == 'PARTANT' and p.get('incident') != 'NON_PARTANT']
-        if len(field) < min_runners: continue
-        if not c.get('arrivee'): continue
-        rows, y_win, y_fault, y_place, odds = [], [], [], [], []
-        ok = True
-        for p in field:
-            if not p.get('coteFinale'): ok = False; break
-            rows.append(runner_features(p, c, field))
-            arr = p.get('ordreArrivee')
-            y_win.append(1 if arr == 1 else 0)
-            y_place.append(1 if (arr and arr <= 3) else 0)
-            y_fault.append(1 if (p.get('incident') or '') in
-                           ('DISQUALIFIE_POUR_ALLURE_IRREGULIERE', 'DISQUALIFIE_POTEAU_GALOP',
-                            'TOMBE', 'ARRETE', 'DISTANCE') else 0)
-            odds.append(p['coteFinale'])
-        if not ok or sum(y_win) != 1: continue
-        if FEATS is None: FEATS = sorted(rows[0].keys())
-        races.append(dict(date=c['date'], hippo=c['hippo'], discipline=c['discipline'],
-                          distance=c['distance'], prix=c['montantPrix'],
-                          part=c['particularite'], n=len(field),
-                          X=[[r[k] for k in FEATS] for r in rows],
-                          y_win=y_win, y_place=y_place, y_fault=y_fault, odds=odds,
-                          nums=[p['numPmu'] for p in field],
-                          noms=[p['nom'] for p in field]))
-    return races, FEATS

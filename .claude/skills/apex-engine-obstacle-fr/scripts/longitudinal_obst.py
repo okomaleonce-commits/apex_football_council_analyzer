@@ -21,6 +21,7 @@ class State:
         self.t = defaultdict(lambda: [0, 0, 0])
         self.p = defaultdict(lambda: [0, 0])
         self.g = [0, 0, 0]                        # global n, victoires, chutes
+        self.hip = defaultdict(lambda: [0, 0])    # difficulte de l'hippodrome
 
     def hkey(self, p, d):
         return (p['nom'], d.year - (p.get('age') or 0))
@@ -65,6 +66,9 @@ class State:
         f['t_n'] = math.log1p(tn)
         f['t_win'] = shrink(tw, tn, gw, 30)
         f['t_fall'] = shrink(tf, tn, gf, 30)
+        hn, hf = self.hip[course['hippo']]
+        f['hip_fall'] = shrink(hf, hn, gf, 200)   # taux de chute de l'hippodrome, retreci
+        f['hip_n'] = math.log1p(hn)
         pn, pw = self.p[(hk, p.get('driver'))]
         f['pair_n'] = math.log1p(pn)
         f['pair_win'] = shrink(pw, pn, f['j_win'], 8)
@@ -92,3 +96,5 @@ class State:
             t[0] += 1; t[1] += (arr == 1); t[2] += fall
             pa = self.p[(hk, p.get('driver'))]
             pa[0] += 1; pa[1] += (arr == 1)
+            H2 = self.hip[course['hippo']]
+            H2[0] += 1; H2[1] += fall

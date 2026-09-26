@@ -103,6 +103,8 @@ def runner_features(p, course, field):
     f['steeple'] = 1.0 if d == 'STEEPLECHASE' else 0.0
     f['cross'] = 1.0 if d == 'CROSS' else 0.0
     f['log_distance'] = math.log((course.get('distance') or 3500) / 3500.0)
+    # taille du champ : plus il y a de monde, plus on tombe. Connue avant la course.
+    f['log_n'] = math.log(len(field) / 10.0)
 
     # --- terrain : le penetrometre est constant par course, donc il ne survit au
     # centrage intra-course que sous forme d'interactions avec les variables du cheval.

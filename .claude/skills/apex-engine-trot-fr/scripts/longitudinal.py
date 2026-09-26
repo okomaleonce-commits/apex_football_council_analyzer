@@ -17,6 +17,7 @@ class State:
         self.p = defaultdict(lambda: [0, 0])         # paire cheval-driver
         self.gw = [0, 0]                             # global n, wins
         self.gf = [0, 0]                             # global n, fautes
+        self.hipf = defaultdict(lambda: [0, 0])      # difficulte de l'hippodrome
 
     def hkey(self, p, d):
         return (p['nom'], d.year - (p.get('age') or 0))
@@ -62,6 +63,8 @@ class State:
         tn, tw = self.t[p.get('entraineur') or '?']
         f['t_n'] = math.log1p(tn)
         f['t_win'] = shrink(tw, tn, gwr, 25)
+        hn, hf = self.hipf[course['hippo']]
+        f['hip_fault'] = shrink(hf, hn, gfr, 200)
         pn, pw = self.p[(hk, p.get('driver'))]
         f['pair_n'] = math.log1p(pn)
         f['pair_win'] = shrink(pw, pn, f['d_win'], 10)
@@ -98,6 +101,8 @@ class State:
             tr[0] += 1; tr[1] += (arr == 1)
             pa = self.p[(hk, p.get('driver'))]
             pa[0] += 1; pa[1] += (arr == 1)
+            hp2 = self.hipf[course['hippo']]
+            hp2[0] += 1; hp2[1] += fault
 
 LONG_FEATS = ['h_n','h_win','h_t3','h_fault','h_days','h_nodate','h_last','h_last3',
               'h_rk','h_rkn','h_hip_n','h_hip_win','h_distfit','h_gpc',

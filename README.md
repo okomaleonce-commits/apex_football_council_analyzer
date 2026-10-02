@@ -83,6 +83,24 @@ app/
   static/                  Interface HTML/CSS/JS
 ```
 
+## Multi-sport et garde hors-domaine
+
+Le pipeline supporte désormais plusieurs sports via le champ `sport` du
+payload `/api/analyze` (défaut `football`).
+
+- `sport: "football"` → modèle Poisson football (comportement historique).
+- `sport: "hockey"` → moteur NHL calibré (`app/core/hockey.py`) : ~6.1 buts/match,
+  moneyline incluant prolongation/TAB, ligne réglementaire 3 voies, totaux
+  (4.5 / 5.5 / 6.5) et puck line ±1.5.
+- tout autre sport (basket, tennis…) → **garde hors-domaine**
+  (`app/core/sports.py`) : verdict `NO_MODEL`, aucun pari, et le moteur
+  football/hockey n'est jamais appliqué (évite la contamination de modèle).
+
+`GET /api/sports` liste les sports disposant d'un moteur calibré.
+
+Tests : `pytest tests/` (moteur hockey, cohérence des probabilités, dispatch API,
+garde hors-domaine).
+
 ## Workflow analytique
 
 1. Sélection du match.

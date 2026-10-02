@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 
-Verdict = Literal["BET", "NO_BET", "WAIT_DATA", "WAIT_LINEUPS", "MONITOR_LIVE"]
+Verdict = Literal["BET", "NO_BET", "WAIT_DATA", "WAIT_LINEUPS", "MONITOR_LIVE", "NO_MODEL"]
 MarketName = Literal["1X2", "DOUBLE_CHANCE", "BTTS", "OVER_UNDER_2_5", "TEAM_TOTALS", "CORRECT_SCORE"]
 
 
@@ -14,6 +14,10 @@ class MatchAnalysisRequest(BaseModel):
     league: str
     home: str
     away: str
+    # `sport` reste un str libre (et non un Literal) pour que les sports non
+    # calibrés atteignent la garde hors-domaine (verdict NO_MODEL) au lieu
+    # d'être rejetés en amont par la validation Pydantic.
+    sport: str = "football"
     season: int | None = None
     league_id: int | None = None
     risk_profile: Literal["faible", "modere", "eleve"] = "modere"
@@ -104,6 +108,26 @@ class MarketSignal(BaseModel):
     rationale: str
 
 
+class HockeyProbabilitySet(BaseModel):
+    moneyline_home: float
+    moneyline_away: float
+    regulation_home: float
+    regulation_tie: float
+    regulation_away: float
+    puckline_home_minus_1_5: float
+    puckline_away_plus_1_5: float
+    puckline_away_minus_1_5: float
+    puckline_home_plus_1_5: float
+    home_total_over_2_5: float
+    away_total_over_2_5: float
+    overtime_home_share: float
+    most_likely_scores: list[dict[str, Any]]
+    lambda_home: float
+    lambda_away: float
+    expected_total: float
+    totals: dict[str, dict[str, float]]
+
+
 class AdvisorOutput(BaseModel):
     advisor: str
     position: str
@@ -132,3 +156,29 @@ class AnalysisReport(BaseModel):
     council: CouncilVerdict
     warnings: list[str] = Field(default_factory=list)
     data_pack_summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class HockeyReport(BaseModel):
+    request: MatchAnalysisRequest
+    sport: str = "hockey"
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    data_quality: DataQuality
+    probabilities: HockeyProbabilitySet
+    market_signals: list[MarketSignal]
+    final_verdict: Verdict
+    primary_bet: MarketSignal | None = None
+    alternatives: list[MarketSignal] = Field(default_factory=list)
+    council: CouncilVerdict
+    warnings: list[str] = Field(default_factory=list)
+    data_pack_summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class OutOfDomainReport(BaseModel):
+    """Réponse structurée quand aucun moteur calibré n'existe pour le sport."""
+
+    request: MatchAnalysisRequest
+    sport: str
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    final_verdict: Verdict = "NO_MODEL"
+    message: str
+    supported_sports: list[str] = Field(default_factory=list)

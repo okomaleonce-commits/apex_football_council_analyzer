@@ -161,6 +161,25 @@ dossier de course, en append-only.
 **Comportemental** : `apex-tbi-cheval`, `apex-tbi-driver`, `apex-tbi-ecurie`,
 `apex-tbi-engagement`, `apex-tbi-piste`, `apex-tbi-narration`, `apex-tbi-synthesizer`.
 
+## Email — obligatoire à chaque passage
+
+**Règle du dépôt (`CLAUDE.md`) : un passage sans email envoyé est INCOMPLET.**
+
+`finalize` construit **toujours** le digest (`email.html`, `email.txt`,
+`email.subject.txt`) et affiche une bannière « ENVOI EMAIL OBLIGATOIRE ». Enchaîner
+immédiatement :
+
+```
+mcp__Gmail__send_message
+  to       = ["okoma.leonce@gmail.com"]
+  subject  = contenu de runs_turf_mi/<run>/email.subject.txt
+  htmlBody = contenu de runs_turf_mi/<run>/email.html
+  body     = contenu de runs_turf_mi/<run>/email.txt
+```
+
+Le script n'envoie rien lui-même : pas de SMTP configuré. **Preuve d'envoi = l'`id` /
+`threadId` Gmail.** Recharger l'outil par `ToolSearch` si le connecteur s'est déconnecté.
+
 ## Activation depuis APEX-TURF-WORM
 
 ```bash
@@ -168,12 +187,25 @@ python3 tools/apex_turf_mi.py worm-hook --within 30
 ```
 
 ```
-NON_PARTANT_WATCH = 0,60 · retraits tardifs + 0,40 · recomposition du marché
+OUTSIDER_WATCH    = 0,55 · outsider structurel (WORM) + 0,45 · confirmation (l'outsider se raccourcit)
+FAVORI_WATCH      = 0,55 · favori dominant (WORM)     + 0,45 · confirmation (le favori se raccourcit)
+NON_PARTANT_WATCH = 0,60 · retraits tardifs           + 0,40 · recomposition du marché
 ```
+
+Les deux premiers sont les **miroirs exacts** du pont football (`UPSET_WATCH` et
+`BLOWOUT_WATCH`, 0,55 / 0,45). Le troisième n'a **aucun équivalent football** : un retrait
+à H-30 redistribue *tout* l'argent de la course, et le PMU le publie. Tri par le maximum
+des trois, comme le pont football trie par le max de ses deux axes.
+
+**Seul un raccourcissement compte comme confirmation.** Une dérive en sens inverse n'est
+pas une confirmation faible, c'est une infirmation — d'où les statuts `*_FADING`.
 
 | Statut | Signification |
 |---|---|
-| `NON_PARTANT_WATCH` | un retrait vient d'avoir lieu |
+| `LIVE_OUTSIDER_WATCH` | outsider structurellement sous-évalué **et** argent qui va vers lui |
+| `LIVE_FAVORI_WATCH` | favori dominant **et** argent qui va vers lui |
+| `NON_PARTANT_WATCH` | un retrait vient d'avoir lieu — tout l'argent se redistribue |
+| `OUTSIDER_FADING` / `FAVORI_FADING` | le marché s'en éloigne |
 | `MARCHE_RECOMPOSE` | pas de retrait, amplitude de dérive ≥ 50/100 |
 | `WATCH` | pas de confirmation de mouvement |
 

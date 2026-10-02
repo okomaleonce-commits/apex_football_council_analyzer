@@ -1,4 +1,36 @@
-# Transplanter APEX-TURF-WORM et APEX-TURF-MI dans Apex-TSS
+# Transplantation dans Apex-TSS — FAITE
+
+> **02/10/2026, 21h50 UTC.** L'utilisateur a autorisé l'écriture. Le travail est poussé
+> sur **`okomaleonce-commits/Apex-TSS`, branche `claude/apex-turf-worm-mi`**, basée sur
+> `3fa33dd` (dernier commit de la branche de vos deux sessions). Zéro collision de nom.
+>
+> Une **branche dédiée** et non `claude/agents-protocole-apex-gsq9k6` : deux sessions
+> commitent sur celle-là (`APEX TSS — WORM SCANNER 24H`, `APEX Market Intelligence
+> Swarm`), et pousser là serait entré en course avec elles. La branche se fusionne
+> proprement puisqu'elle part de leur pointe.
+>
+> Trois ajustements faits **pendant** la transplantation, pour coller à l'état réel du
+> dépôt plutôt qu'à celui que j'avais lu trois heures plus tôt :
+>
+> 1. **Pont aligné sur trois axes.** Leur pont football avait gagné `BLOWOUT_WATCH` en
+>    miroir d'`UPSET_WATCH` (commit `3fa33dd`, 21h15). Le pont turf avait un seul axe ; il
+>    en a maintenant trois — `OUTSIDER_WATCH` et `FAVORI_WATCH` (miroirs exacts) plus
+>    `NON_PARTANT_WATCH`, propre au turf.
+> 2. **Email ajouté aux deux cellules.** Leur `CLAUDE.md` porte une règle absolue : « un
+>    passage sans email envoyé est INCOMPLET ». Mes cellules n'avaient pas d'email, elles
+>    étaient donc non conformes. `scan` construit désormais le digest en fin de passage et
+>    `finalize` toujours ; aucun des deux n'envoie, l'envoi passe par le connecteur Gmail.
+> 3. **Défaut du registre corrigé.** `scan --date 03102026` écrivait dans le registre du
+>    jour du scan et non du programme scanné : `report --date 2026-10-03` ne trouvait rien
+>    et le registre se mélangeait.
+>
+> `CLAUDE.md` et `.gitignore` d'`Apex-TSS` sont à jour, selon leurs conventions
+> (`data/turf_worm/` et `reports/turf_worm/` ignorés en entier, `runs_turf_mi/*` avec son
+> `.gitkeep`, comme `data/worm/` et `runs_mi/*`).
+>
+> Ce qui suit est la note d'origine, conservée pour l'inventaire des fichiers.
+
+---
 
 ## Pourquoi ce fichier existe
 
@@ -6,10 +38,9 @@ Ces deux cellules appartiennent à **`okomaleonce-commits/Apex-TSS`**, branche
 `claude/agents-protocole-apex-gsq9k6` — c'est là que vivent `apex-worm-scanner`,
 `apex-market-intel-team`, `apex-turf-team` et les outils `tools/apex_*.py`.
 
-Elles ont été écrites ici parce que **l'écriture sur `Apex-TSS` m'a été refusée** par le
-classificateur de permissions de la session (`add_repo access:"push"` → *Permission Grant*
-denied). Les chemins sont donc ceux d'`Apex-TSS`, pas ceux de ce dépôt : le transfert est
-une copie, sans réécriture.
+Elles ont d'abord été écrites ici parce que l'écriture sur `Apex-TSS` était refusée. Elle
+a ensuite été autorisée, et le transfert est fait. Les fichiers restent présents ici à
+l'identique : les chemins sont ceux d'`Apex-TSS`, donc la copie était directe.
 
 ## Ce qu'il faut copier
 

@@ -149,23 +149,62 @@ Au football le croisement porte sur l'UPSET. Ici il porte sur ce que le pari mut
 visible et qui n'a pas d'équivalent :
 
 ```
-NON_PARTANT_WATCH = 0,60 · retraits tardifs + 0,40 · recomposition du marché
+OUTSIDER_WATCH    = 0,55 · outsider structurel (WORM) + 0,45 · confirmation (l'outsider se raccourcit)
+FAVORI_WATCH      = 0,55 · favori dominant (WORM)     + 0,45 · confirmation (le favori se raccourcit)
+NON_PARTANT_WATCH = 0,60 · retraits tardifs           + 0,40 · recomposition du marché
 ```
 
-Un retrait à H-30 redistribue **tout** l'argent de la course. C'est le seul événement du
-turf dont l'effet sur les cotes est certain avant le départ. Sorties :
-`data/turf_worm/mi/<jour>.json` et `reports/turf_worm/<jour>.mi.md`.
+Les deux premiers sont les **miroirs exacts** du pont football (`UPSET_WATCH` et
+`BLOWOUT_WATCH`, 0,55 / 0,45). Le troisième n'a **aucun équivalent football** : un retrait
+à H-30 redistribue *tout* l'argent de la course, et le PMU le publie. Tri par le maximum
+des trois, comme le pont football trie par le max de ses deux axes.
+
+**Seul un raccourcissement compte comme confirmation.** Une dérive en sens inverse n'est
+pas une confirmation faible, c'est une infirmation — d'où les statuts `*_FADING`.
+
+Sorties : `data/turf_worm/mi/<jour>.json` et `reports/turf_worm/<jour>.mi.md`.
 
 ## Collecte
 
 Source unique : l'API publique turfinfo du PMU. Pas de clé, pas de login, rien à
 contourner. User-Agent identifiable, trois tentatives avec attente exponentielle.
 
+## Email — obligatoire à chaque passage
+
+**Règle du dépôt (`CLAUDE.md`) : un passage sans email envoyé est INCOMPLET.** Elle vaut
+ici comme pour le WORM football.
+
+Les secrets `WORM_SMTP_*` ne sont pas configurés : le script **construit** le digest et
+**n'envoie rien**. L'envoi réel se fait en session par le connecteur Gmail.
+
+```bash
+python3 tools/apex_turf_worm.py email          # ecrit reports/turf_worm/<jour>.email.html
+#   (scan l'appelle deja automatiquement en fin de passage)
+```
+
+Puis, en session :
+
+```
+mcp__Gmail__send_message
+  to       = ["okoma.leonce@gmail.com"]
+  subject  = contenu de reports/turf_worm/<jour>.email.subject.txt
+  htmlBody = contenu de reports/turf_worm/<jour>.email.html
+```
+
+`build_email_html(day)` est aussi importable et renvoie `(sujet, html)`, comme
+`apex_worm.build_email_html`. Le digest joint automatiquement le fragment
+`reports/turf_worm/<jour>.mi.md` quand il existe.
+
+**Preuve d'envoi = l'`id` / `threadId` Gmail** renvoyé par l'outil. Si le connecteur
+s'est déconnecté, le recharger par `ToolSearch` avant d'envoyer. Pour un envoi 100 %
+autonome par le cron, il faudrait renseigner `WORM_SMTP_*`.
+
 ## Sorties
 
 - `data/turf_worm/snapshots/<jour>.jsonl` — historique horodaté append-only
 - `reports/turf_worm/<jour>.md` — signaux, moteurs absents
 - `reports/turf_worm/<jour>.mi.md` — activation H-30
+- `reports/turf_worm/<jour>.email.html` + `.email.subject.txt` — digest à envoyer
 
 ## Limites connues, non corrigées
 

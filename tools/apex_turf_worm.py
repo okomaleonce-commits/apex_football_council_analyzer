@@ -388,8 +388,19 @@ def last_pass(hist, course_id):
 # ----------------------------------------------------------------------- scan
 
 def cmd_scan(a):
-    day, start, end = apex_day()
-    ddmmyyyy = a.date or dt.datetime.now(ZoneInfo(TZ)).strftime("%d%m%Y")
+    # Le jour du REGISTRE est celui du programme scanne, pas celui du scan.
+    # Sans cela, `scan --date 03102026` ecrit dans le registre du 02/10 et
+    # `report --date 2026-10-03` ne trouve rien : le registre serait melange.
+    if a.date:
+        try:
+            d = dt.datetime.strptime(a.date, "%d%m%Y").date()
+        except ValueError:
+            print(f"--date attend DDMMYYYY, recu : {a.date}", file=sys.stderr)
+            return 2
+        day, ddmmyyyy = d.isoformat(), a.date
+    else:
+        day = apex_day()[0]
+        ddmmyyyy = dt.datetime.now(ZoneInfo(TZ)).strftime("%d%m%Y")
     os.makedirs(SNAP, exist_ok=True)
     os.makedirs(REPO, exist_ok=True)
 
@@ -446,6 +457,12 @@ def cmd_scan(a):
 
     print(f"STORE : {len(out)} releves ajoutes (append-only) -> {SNAP}/{day}.jsonl")
     write_report(day, out, npass)
+    # Regle maison (CLAUDE.md) : tout passage se termine par un digest.
+    # Le script ne l'envoie pas (pas de SMTP configure) ; il le construit et le dit.
+    try:
+        cmd_email(argparse.Namespace(date=day))
+    except Exception as e:
+        print(f"digest non construit : {type(e).__name__}: {e}", file=sys.stderr)
     return 0
 
 
@@ -547,6 +564,120 @@ def cmd_bilan(a):
     return 0
 
 
+# ------------------------------------------------------------------- email
+
+_CSS = ("font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;"
+        "line-height:1.5;color:#1a1a1a")
+
+
+def build_email_html(day=None):
+    """
+    Construit (sujet, html) pour le digest d'un passage.
+
+    Meme contrat que apex_worm.build_email_html du WORM football, pour que la
+    procedure d'envoi du CLAUDE.md s'applique mot pour mot : le SMTP n'etant
+    pas configure, l'envoi reel passe par le connecteur Gmail en session.
+    """
+    day = day or apex_day()[0]
+    hist = read_snapshots(day)
+    if not hist:
+        return (f"APEX-TURF-WORM {day} — aucun releve",
+                f"<div style='{_CSS}'><p>Aucun snapshot pour {day}.</p></div>")
+    npass = max(h["passage"] for h in hist)
+    last = {h["course"]["course_id"]: h for h in hist if h["passage"] == npass}
+    snaps = list(last.values())
+    ordre = {"SURVEILLER_FORT": 0, "SURVEILLER": 1, "PREMIER_PASSAGE": 2,
+             "RIEN_A_SIGNALER": 3, "HORS_PERIMETRE": 4}
+    snaps.sort(key=lambda x: (ordre.get(x["decision"], 9), -(x["score_global"] or 0)))
+    tops = [x for x in snaps if x["decision"].startswith("SURVEILLER")]
+    hp = [x for x in snaps if x["decision"] == "HORS_PERIMETRE"]
+
+    sujet = (f"APEX-TURF-WORM {day} · passage {npass} · "
+             f"{len(tops)} signal(aux) sur {len(snaps)} courses")
+
+    h = [f"<div style='{_CSS}'>",
+         f"<h2 style='margin:0 0 4px'>APEX-TURF-WORM — journée APEX {day}</h2>",
+         f"<p style='color:#555;margin:0 0 14px'>Passage <b>{npass}</b> · "
+         f"{dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')} · "
+         f"fuseau {TZ} · {len(snaps)} courses</p>",
+         "<p style='background:#fff7e6;border-left:3px solid #d48806;padding:8px 10px;"
+         "margin:0 0 16px'><b>Palier maximal : SURVEILLER.</b> Les deux gates de pari turf "
+         "sont fermées par le backtest (trot ROI −4,58 % sur 118 paris, obstacle −89,05 % "
+         "sur 21). <code>autorite_pari = false</code> sur chaque ligne.</p>"]
+
+    if tops:
+        h.append("<h3>Signaux</h3><table cellpadding='6' cellspacing='0' border='0' "
+                 "style='border-collapse:collapse;width:100%'>")
+        h.append("<tr style='background:#f0f0f0;text-align:left'><th>Course</th>"
+                 "<th>Hippodrome</th><th>H-</th><th>Anomalie</th><th>Score</th>"
+                 "<th>Décision</th></tr>")
+        for x in tops[:25]:
+            c = x["course"]
+            m = x.get("minutes_avant_depart")
+            h.append(
+                f"<tr style='border-bottom:1px solid #e8e8e8'>"
+                f"<td><b>{c['course_id']}</b><br><span style='color:#666'>"
+                f"{(c['libelle'] or '')[:40]}</span></td>"
+                f"<td>{c['hippodrome']}</td>"
+                f"<td>{('H-' + str(m)) if m is not None else '—'}</td>"
+                f"<td><code>{x['signal_dominant']}</code></td>"
+                f"<td><b>{x['score_global']}</b>/100</td>"
+                f"<td>{x['decision']}</td></tr>")
+        h.append("</table>")
+    else:
+        h.append("<p>Aucun signal au-dessus de 45/100 sur ce passage. "
+                 "<i>C'est une sortie valide.</i></p>")
+
+    if hp:
+        h.append(f"<p style='color:#666;margin-top:14px'><b>{len(hp)} course(s) hors "
+                 f"périmètre</b> (aucun moteur calibré, dont le plat) : "
+                 + ", ".join(x["course"]["course_id"] for x in hp[:12])
+                 + (" …" if len(hp) > 12 else "") + "</p>")
+
+    mi = os.path.join(REPO, f"{day}.mi.md")
+    if os.path.exists(mi):
+        txt = open(mi, encoding="utf-8").read()
+        h.append("<h3 style='margin-top:20px'>APEX-TURF-MI — bruit de marché H-30</h3>")
+        h.append("<pre style='background:#fafafa;border:1px solid #eee;padding:10px;"
+                 "overflow-x:auto;font-size:12px'>"
+                 + txt.replace("&", "&amp;").replace("<", "&lt;") + "</pre>")
+
+    h.append("<h3 style='margin-top:20px'>Moteurs structurellement indisponibles</h3>"
+             "<table cellpadding='5' cellspacing='0' style='border-collapse:collapse;"
+             "font-size:13px'>")
+    for k, v in engines_structurellement_absents().items():
+        h.append(f"<tr><td><code>{k}</code></td><td style='color:#999'>{v['provenance']}"
+                 f"</td><td style='color:#666'>{v['motif']}</td></tr>")
+    h.append("</table><p style='color:#888;font-size:12px'><i>Jamais estimés. Une case "
+             "nommée <code>UNAVAILABLE_STRUCTUREL</code> ne se remplit pas un jour par une "
+             "approximation ; une case vide, si.</i></p></div>")
+    return sujet, "\n".join(h)
+
+
+def cmd_email(a):
+    day = a.date or apex_day()[0]
+    sujet, html = build_email_html(day)
+    os.makedirs(REPO, exist_ok=True)
+    ph = os.path.join(REPO, f"{day}.email.html")
+    ps = os.path.join(REPO, f"{day}.email.subject.txt")
+    open(ph, "w", encoding="utf-8").write(html)
+    open(ps, "w", encoding="utf-8").write(sujet + "\n")
+    print(f"SUBJECT: {sujet}")
+    print(f"html    -> {ph}")
+    print(f"sujet   -> {ps}")
+    print()
+    print("=" * 68)
+    print("ENVOI EMAIL OBLIGATOIRE — un passage sans email envoye est INCOMPLET.")
+    print("Les secrets WORM_SMTP_* ne sont pas configures : ce script n'envoie RIEN.")
+    print("Enchainer en session avec mcp__Gmail__send_message :")
+    print('  to=["okoma.leonce@gmail.com"]')
+    print(f"  subject = <{os.path.basename(ps)}>")
+    print(f"  htmlBody = <{os.path.basename(ph)}>")
+    print("Preuve d'envoi = l'id/threadId Gmail renvoye par l'outil.")
+    print("=" * 68)
+    return 0
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="apex_turf_worm", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -557,9 +688,11 @@ def main(argv=None):
     s.add_argument("--max-courses", type=int)
     r = sp.add_parser("report"); r.add_argument("--date", help="YYYY-MM-DD")
     b = sp.add_parser("bilan");  b.add_argument("--date", help="YYYY-MM-DD")
+    e = sp.add_parser("email");  e.add_argument("--date", help="YYYY-MM-DD")
     a = p.parse_args(argv)
     return {"window": cmd_window, "scan": cmd_scan,
-            "report": cmd_report, "bilan": cmd_bilan}[a.cmd](a)
+            "report": cmd_report, "bilan": cmd_bilan,
+            "email": cmd_email}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -27,13 +27,26 @@ python3 tools/apex_turf_mi.py worm-hook --within 30
 Le hook croise les deux signaux tardifs du turf :
 
 ```
-NON_PARTANT_WATCH = 0,60 · retraits tardifs + 0,40 · recomposition du marché
+OUTSIDER_WATCH    = 0,55 · outsider structurel (WORM) + 0,45 · confirmation (l'outsider se raccourcit)
+FAVORI_WATCH      = 0,55 · favori dominant (WORM)     + 0,45 · confirmation (le favori se raccourcit)
+NON_PARTANT_WATCH = 0,60 · retraits tardifs           + 0,40 · recomposition du marché
 ```
+
+Les deux premiers sont les **miroirs exacts** du pont football (`UPSET_WATCH` et
+`BLOWOUT_WATCH`, 0,55 / 0,45). Le troisième n'a **aucun équivalent football** : un retrait
+à H-30 redistribue *tout* l'argent de la course, et le PMU le publie. Tri par le maximum
+des trois, comme le pont football trie par le max de ses deux axes.
+
+**Seul un raccourcissement compte comme confirmation.** Une dérive en sens inverse n'est
+pas une confirmation faible, c'est une infirmation — d'où les statuts `*_FADING`.
 
 | Statut | Signification |
 |---|---|
+| `LIVE_OUTSIDER_WATCH` | outsider structurellement sous-évalué **et** argent qui va vers lui |
+| `LIVE_FAVORI_WATCH` | favori dominant **et** argent qui va vers lui |
 | `NON_PARTANT_WATCH` | un retrait vient d'avoir lieu — tout l'argent se redistribue |
-| `MARCHE_RECOMPOSE` | pas de retrait, mais l'amplitude de dérive dépasse 50/100 |
+| `OUTSIDER_FADING` / `FAVORI_FADING` | le marché s'en éloigne |
+| `MARCHE_RECOMPOSE` | pas de retrait, amplitude de dérive ≥ 50/100 |
 | `WATCH` | pas de confirmation de mouvement |
 
 ## Un retrait tardif n'est pas une occasion

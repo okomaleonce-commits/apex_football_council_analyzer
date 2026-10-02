@@ -24,7 +24,10 @@ plus fort qu'un sharp move de football, et ils sont OBSERVED, pas inferes.
     python3 tools/apex_turf_mi.py check  --course-dir ...
     python3 tools/apex_turf_mi.py score  --course-dir ...
     python3 tools/apex_turf_mi.py finalize --run runs_turf_mi/<run>
+    python3 tools/apex_turf_mi.py email    --run runs_turf_mi/<run>
     python3 tools/apex_turf_mi.py worm-hook --day YYYY-MM-DD --within 30
+        -> trois axes : OUTSIDER_WATCH, FAVORI_WATCH (miroirs du pont football)
+           et NON_PARTANT_WATCH (propre au turf)
 
 Stdlib uniquement.
 """
@@ -508,6 +511,104 @@ def cmd_finalize(a):
                     f"{m.get('MARKET_SIGNAL_SCORE','')},{b.get('BEHAVIORAL_SIGNAL','')},"
                     f"{i.get('statut','')},false\n")
     print(f"SYNTHESE  : {p}\njournal   : {jrn} (append-only)\nCANDIDATE : {n_cand}/{len(cs)}")
+    # Regle maison (CLAUDE.md) : finalize construit TOUJOURS le digest.
+    cmd_email(argparse.Namespace(run=run))
+    return 0
+
+
+def _confirmation(mouvements, num):
+    """
+    Confirmation de mouvement : la cote de ce partant se raccourcit-elle ?
+    Seul un RACCOURCISSEMENT compte comme confirmation — une derive en sens
+    inverse n'est pas une confirmation faible, c'est une infirmation.
+    Retourne (score 0-100, variation_pct) ou (None, None) si non apparie.
+    """
+    for m in (mouvements or []):
+        if m["num"] == num:
+            v = m["variation_pct"]
+            return (min(100, round(abs(v) * 2.8)) if v < 0 else 0), v
+    return None, None
+
+
+def cmd_email(a):
+    """
+    Construit le digest du run. Meme contrat qu'apex_mi.py email : le script
+    n'envoie rien (pas de SMTP configure), l'envoi reel passe par le
+    connecteur Gmail en session, comme l'impose le CLAUDE.md du depot.
+    """
+    run = a.run
+    cs = sorted(d for d in glob.glob(os.path.join(run, "*")) if os.path.isdir(d))
+    rows, n_cand = [], 0
+    for d in cs:
+        c = jload(os.path.join(d, "00_course.json"))
+        if not c:
+            continue
+        m = jload(os.path.join(d, "90_market_synthesis.json")) or {}
+        b = jload(os.path.join(d, "91_behavioral.json")) or {}
+        i = jload(os.path.join(d, "92_integration.json")) or {}
+        if i.get("statut") == "CANDIDATE":
+            n_cand += 1
+        rows.append((c, m, b, i))
+    sujet = (f"APEX-TURF-MI {os.path.basename(run)} · {len(rows)} course(s) · "
+             f"{n_cand} CANDIDATE")
+    css = ("font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;"
+           "line-height:1.5;color:#1a1a1a")
+    h = [f"<div style='{css}'>",
+         f"<h2 style='margin:0 0 4px'>APEX-TURF-MI — run {os.path.basename(run)}</h2>",
+         f"<p style='color:#555;margin:0 0 14px'>{len(rows)} course(s) · "
+         f"{dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')} · "
+         f"fuseau {TZ}</p>",
+         "<p style='background:#e6f4ff;border-left:3px solid #1677ff;padding:8px 10px;"
+         "margin:0 0 16px'>Cette cellule <b>ne price pas</b> et <b>n'émet jamais un "
+         "pari</b> : <code>bet_authority = false</code>, "
+         "<code>requires_statistical_convergence = true</code>. Le maximum atteignable "
+         "ici est <b>CANDIDATE</b> — la brique DATA appartient à "
+         "<code>apex-turf-team</code>.</p>"]
+    if rows:
+        h.append("<table cellpadding='6' cellspacing='0' style='border-collapse:collapse;"
+                 "width:100%'><tr style='background:#f0f0f0;text-align:left'>"
+                 "<th>Course</th><th>Vague</th><th>Marché</th><th>Signal dominant</th>"
+                 "<th>MKT</th><th>COMP</th><th>Intégration</th></tr>")
+        for c, m, b, i in rows:
+            h.append(
+                f"<tr style='border-bottom:1px solid #e8e8e8'>"
+                f"<td><b>{c['course_id']}</b><br><span style='color:#666'>"
+                f"{(c['libelle'] or '')[:36]} · {c['hippodrome']}</span></td>"
+                f"<td>{c['vague']}<br><span style='color:#666'>H-"
+                f"{c['minutes_avant_depart']}</span></td>"
+                f"<td>{m.get('etat_marche','?')}</td>"
+                f"<td><code>{m.get('signal_dominant') or '—'}</code></td>"
+                f"<td><b>{m.get('MARKET_SIGNAL_SCORE',0)}</b></td>"
+                f"<td>{b.get('BEHAVIORAL_SIGNAL',0)}<br><span style='color:#666'>"
+                f"{b.get('n_faits',0)} fait(s)</span></td>"
+                f"<td><b>{i.get('statut','RIEN')}</b></td></tr>")
+        h.append("</table>")
+    else:
+        h.append("<p>Aucune course dans ce run.</p>")
+    h.append("<h3 style='margin-top:20px'>Familles structurellement indisponibles</h3>"
+             "<table cellpadding='5' cellspacing='0' style='border-collapse:collapse;"
+             "font-size:13px'>")
+    for k, v in FAMILLES_ABSENTES.items():
+        h.append(f"<tr><td><code>{k}</code></td><td style='color:#666'>{v}</td></tr>")
+    h.append("</table><p style='color:#888;font-size:12px'><i>Le pari mutuel les rend "
+             "impossibles à mesurer. Ni estimées, ni omises.</i></p></div>")
+    html = "\n".join(h)
+    for nom, contenu in (("email.html", html),
+                         ("email.subject.txt", sujet + "\n"),
+                         ("email.txt", f"{sujet}\n\nVoir SYNTHESE.md du run "
+                                       f"{os.path.basename(run)}.\n"
+                                       f"bet_authority = false.\n")):
+        open(os.path.join(run, nom), "w", encoding="utf-8").write(contenu)
+    print(f"SUBJECT: {sujet}")
+    print(f"-> {run}/email.html · email.txt · email.subject.txt")
+    print()
+    print("=" * 68)
+    print("ENVOI EMAIL OBLIGATOIRE — un passage sans email envoye est INCOMPLET.")
+    print("Enchainer en session avec mcp__Gmail__send_message :")
+    print('  to=["okoma.leonce@gmail.com"]')
+    print("  subject = email.subject.txt | htmlBody = email.html | body = email.txt")
+    print("Preuve d'envoi = l'id/threadId Gmail renvoye par l'outil.")
+    print("=" * 68)
     return 0
 
 
@@ -515,14 +616,25 @@ def cmd_worm_hook(a):
     """
     Activation H-30 depuis un scan APEX-TURF-WORM.
 
-    Au football le croisement porte sur l'UPSET. Ici il porte sur ce que le pari
-    mutuel rend visible et qui n'a pas d'equivalent football :
+    Miroir du pont football, qui croise deux anomalies structurelles avec le
+    mouvement du marche dans le meme sens :
 
-        NON_PARTANT_WATCH = 0.60 · retraits tardifs (WORM)
-                          + 0.40 · recomposition du marche qui s'ensuit
+        OUTSIDER_WATCH   = 0,55 · outsider structurel (WORM)
+                         + 0,45 · confirmation (l'outsider se raccourcit)
+        FAVORI_WATCH     = 0,55 · favori dominant (WORM)
+                         + 0,45 · confirmation (le favori se raccourcit)
 
-    Un retrait a H-30 redistribue tout l'argent de la course. C'est le seul
+    Plus un TROISIEME axe, sans equivalent football, parce que le turf le
+    publie et que le football n'a rien de comparable :
+
+        NON_PARTANT_WATCH = 0,60 · retraits tardifs
+                          + 0,40 · recomposition du marche
+
+    Un retrait a H-30 redistribue TOUT l'argent de la course. C'est le seul
     evenement du turf dont l'effet sur les cotes est certain avant le depart.
+
+    Tri par le maximum des trois, comme le pont football trie par le max de
+    ses deux axes.
     """
     day = a.day or dt.datetime.now(ZoneInfo(TZ)).date().isoformat()
     f = os.path.join(WORM_SNAP, f"{day}.jsonl")
@@ -539,52 +651,127 @@ def cmd_worm_hook(a):
         except json.JSONDecodeError:
             continue
         par.setdefault(s["course"]["course_id"], []).append(s)
+
     out, within = [], a.within or 30
     for cid, ps in par.items():
         last = ps[-1]
         m = last.get("minutes_avant_depart")
         if m is None or not (0 <= m <= within):
             continue
-        npm = last["moteurs"]["non_partants"]
-        der = last["moteurs"]["derive"]
-        retr = npm.get("score")
-        reco = der.get("score")
-        if retr is None and reco is None:
-            statut, sc = "WATCH", None
-        else:
-            sc = round(0.60 * (retr or 0) + 0.40 * (reco or 0))
-            statut = ("NON_PARTANT_WATCH" if npm.get("nouveaux_retraits")
-                      else "MARCHE_RECOMPOSE" if (reco or 0) >= 50 else "WATCH")
-        out.append(dict(course_id=cid, libelle=last["course"]["libelle"],
-                        hippodrome=last["course"]["hippodrome"],
-                        discipline=last["course"]["discipline"],
-                        minutes_avant_depart=m, vague=vague(m),
-                        NON_PARTANT_WATCH=sc, statut=statut,
-                        nouveaux_retraits=npm.get("nouveaux_retraits"),
-                        amplitude_derive_pct=der.get("amplitude_max_pct"),
-                        bet_authority=False))
-    out.sort(key=lambda x: -(x["NON_PARTANT_WATCH"] or 0))
-    jdump(os.path.join(WORM_MI, f"{day}.json"),
-          dict(journee=day, fenetre_min=within, n=len(out), courses=out,
-               formule="NON_PARTANT_WATCH = 0.60 · retraits tardifs + 0.40 · recomposition",
-               bet_authority=False))
-    L = [f"# APEX-TURF-MI — bruit de marche H-{within} (focus NON-PARTANTS)", "",
-         f"journee APEX {day} · {len(out)} courses dans la fenetre", "",
-         "| Course | Hippodrome | H- | Statut | Score | Retraits | Amplitude |",
-         "|---|---|---|---|---|---|---|"]
-    for x in out:
-        L.append(f"| {x['course_id']} | {x['hippodrome']} | {x['minutes_avant_depart']} | "
-                 f"**{x['statut']}** | {x['NON_PARTANT_WATCH'] if x['NON_PARTANT_WATCH'] is not None else 'n/d'} | "
-                 f"{', '.join('#'+str(n) for n in (x['nouveaux_retraits'] or [])) or '—'} | "
-                 f"{x['amplitude_derive_pct'] if x['amplitude_derive_pct'] is not None else 'n/d'} % |")
-    L += ["", "`bet_authority = false` — cette cellule ne price pas.", ""]
+        mot = last["moteurs"]
+        npm, der = mot["non_partants"], mot["derive"]
+        fav, outs = mot["favori_dominant"], mot["outsider"]
+        mouv = der.get("mouvements")
+
+        # --- axe 1 : outsider (miroir de UPSET_WATCH)
+        o_watch = o_statut = o_num = o_var = None
+        best = outs.get("meilleur")
+        if outs.get("score") is not None and best:
+            o_num = best["num"]
+            cs, o_var = _confirmation(mouv, o_num)
+            if cs is not None:
+                o_watch = round(0.55 * outs["score"] + 0.45 * cs)
+                o_statut = ("LIVE_OUTSIDER_WATCH" if cs > 0 else "OUTSIDER_FADING")
+            else:
+                o_watch, o_statut = outs["score"], "WATCH"
+
+        # --- axe 2 : favori dominant (miroir de BLOWOUT_WATCH)
+        f_watch = f_statut = f_num = f_var = None
+        if fav.get("score") is not None and fav.get("favori") is not None:
+            f_num = fav["favori"]
+            cs, f_var = _confirmation(mouv, f_num)
+            if cs is not None:
+                f_watch = round(0.55 * fav["score"] + 0.45 * cs)
+                f_statut = ("LIVE_FAVORI_WATCH" if cs > 0 else "FAVORI_FADING")
+            else:
+                f_watch, f_statut = fav["score"], "WATCH"
+
+        # --- axe 3 : non-partants (propre au turf)
+        n_watch = n_statut = None
+        if npm.get("score") is not None or der.get("score") is not None:
+            n_watch = round(0.60 * (npm.get("score") or 0) + 0.40 * (der.get("score") or 0))
+            n_statut = ("NON_PARTANT_WATCH" if npm.get("nouveaux_retraits")
+                        else "MARCHE_RECOMPOSE" if (der.get("score") or 0) >= 50 else "WATCH")
+
+        scores = [x for x in (o_watch, f_watch, n_watch) if x is not None]
+        dominant = max(
+            ((s, st) for s, st in ((o_watch, o_statut), (f_watch, f_statut),
+                                   (n_watch, n_statut)) if s is not None),
+            key=lambda t: t[0], default=(None, "WATCH"))
+        out.append(dict(
+            course_id=cid, libelle=last["course"]["libelle"],
+            hippodrome=last["course"]["hippodrome"],
+            discipline=last["course"]["discipline"],
+            minutes_avant_depart=m, vague=vague(m),
+            OUTSIDER_WATCH=o_watch, outsider_statut=o_statut,
+            outsider_num=o_num, outsider_variation_pct=o_var,
+            FAVORI_WATCH=f_watch, favori_statut=f_statut,
+            favori_num=f_num, favori_variation_pct=f_var,
+            NON_PARTANT_WATCH=n_watch, non_partant_statut=n_statut,
+            nouveaux_retraits=npm.get("nouveaux_retraits"),
+            amplitude_derive_pct=der.get("amplitude_max_pct"),
+            score_max=(max(scores) if scores else None),
+            statut=dominant[1], bet_authority=False))
+
+    out.sort(key=lambda x: -(x["score_max"] or 0))
+    jdump(os.path.join(WORM_MI, f"{day}.json"), dict(
+        journee=day, fenetre_min=within, n=len(out),
+        focus="NON_PARTANT+OUTSIDER+FAVORI", courses=out,
+        formules=dict(
+            OUTSIDER_WATCH="0,55 · outsider structurel (WORM) + 0,45 · confirmation (l'outsider se raccourcit)",
+            FAVORI_WATCH="0,55 · favori dominant (WORM) + 0,45 · confirmation (le favori se raccourcit)",
+            NON_PARTANT_WATCH="0,60 · retraits tardifs + 0,40 · recomposition du marche"),
+        garde_fous=[
+            "seul un raccourcissement compte comme confirmation ; une derive est une infirmation",
+            "RLM non calculable : le PMU ne publie pas le % de parieurs par partant",
+            "masse des enjeux non collectee",
+            "bet_authority=false — cette cellule ne price pas"],
+        bet_authority=False))
+
+    L = [f"## APEX-TURF-MI — bruit de marche H-{within} "
+         f"(focus NON-PARTANTS + OUTSIDER + FAVORI) · {day}", "",
+         f"{len(out)} course(s) dans la fenetre", ""]
+    if out:
+        L += ["| Dans | Course | Hippodrome | OUTSIDER (n°, Δ) | OUTSIDER WATCH | "
+              "FAVORI (n°, Δ) | FAVORI WATCH | NON-PARTANTS | NP WATCH | Statut |",
+              "|---|---|---|---|---|---|---|---|---|---|"]
+        for x in out:
+            od = (f"#{x['outsider_num']}, {x['outsider_variation_pct']:+.1f} %"
+                  if x["outsider_num"] is not None and x["outsider_variation_pct"] is not None
+                  else "—")
+            fd = (f"#{x['favori_num']}, {x['favori_variation_pct']:+.1f} %"
+                  if x["favori_num"] is not None and x["favori_variation_pct"] is not None
+                  else "—")
+            n = lambda v: (v if v is not None else "—")
+            L.append(f"| H-{x['minutes_avant_depart']} | {x['course_id']} | {x['hippodrome']} | "
+                     f"{od} | {n(x['OUTSIDER_WATCH'])} | {fd} | {n(x['FAVORI_WATCH'])} | "
+                     f"{', '.join('#'+str(k) for k in (x['nouveaux_retraits'] or [])) or '—'} | "
+                     f"{n(x['NON_PARTANT_WATCH'])} | **{x['statut']}** |")
+    else:
+        L.append("Aucune course dans la fenetre. Sortie valide.")
+    L += ["",
+          "OUTSIDER WATCH = 0,55 · outsider structurel (WORM) + 0,45 · confirmation de "
+          "mouvement vers l'outsider. ",
+          "FAVORI WATCH = 0,55 · favori dominant (WORM) + 0,45 · confirmation de mouvement "
+          "vers le favori. ",
+          "NON-PARTANT WATCH = 0,60 · retraits tardifs + 0,40 · recomposition du marche — "
+          "axe propre au turf, un retrait redistribue tout l'argent de la course. ",
+          "`LIVE_OUTSIDER_WATCH` / `LIVE_FAVORI_WATCH` = anomalie structurelle **et** argent "
+          "qui va dans le meme sens. `*_FADING` = le marche s'en eloigne.", "",
+          "Garde-fous : seul un raccourcissement compte comme confirmation ; RLM non "
+          "calculable sans % public ; masse des enjeux non collectee ; "
+          "`bet_authority = false`.", ""]
     p = os.path.join(ROOT, "reports", "turf_worm", f"{day}.mi.md")
     os.makedirs(os.path.dirname(p), exist_ok=True)
     open(p, "w", encoding="utf-8").write("\n".join(L) + "\n")
-    print(f"{len(out)} courses dans la fenetre H-{within}\n-> {p}")
+    print(f"APEX-TURF-MI worm-hook {day} : {len(out)} course(s) H-{within} "
+          f"(focus NON_PARTANT + OUTSIDER + FAVORI)\n-> {p}")
     for x in out[:8]:
-        print(f"  {x['course_id']:<22} {x['statut']:<18} "
-              f"{x['NON_PARTANT_WATCH'] if x['NON_PARTANT_WATCH'] is not None else 'n/d'}")
+        nn = lambda v: (v if v is not None else "—")
+        print(f"  {x['course_id']:<22} OUTSIDER {nn(x['OUTSIDER_WATCH'])} "
+              f"[{nn(x['outsider_statut'])}] · FAVORI {nn(x['FAVORI_WATCH'])} "
+              f"[{nn(x['favori_statut'])}] · NP {nn(x['NON_PARTANT_WATCH'])} "
+              f"[{nn(x['non_partant_statut'])}] -> {x['statut']}")
     return 0
 
 
@@ -610,11 +797,13 @@ def main(argv=None):
     pc = sp.add_parser("check"); pc.add_argument("--course-dir", required=True)
     pz = sp.add_parser("score"); pz.add_argument("--course-dir", required=True)
     pf = sp.add_parser("finalize"); pf.add_argument("--run", required=True)
+    pe = sp.add_parser("email"); pe.add_argument("--run", required=True)
     pw = sp.add_parser("worm-hook"); pw.add_argument("--day"); pw.add_argument("--within", type=int)
     a = p.parse_args(argv)
     return {"window": cmd_window, "init": cmd_init, "oddsflow": cmd_oddsflow,
             "signal": cmd_signal, "behavioral": cmd_behavioral, "check": cmd_check,
-            "score": cmd_score, "finalize": cmd_finalize, "worm-hook": cmd_worm_hook}[a.cmd](a)
+            "score": cmd_score, "finalize": cmd_finalize, "email": cmd_email,
+            "worm-hook": cmd_worm_hook}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,12 @@ description: >
 
 # APEX-ENGINE OBSTACLE-FR v1.0
 
+> **Point d'entrée.** Depuis le 02/10/2026, ce moteur est un étage du swarm
+> `apex-turf-swarm` (agents `turf-t1` à `turf-t9`). L'invoquer directement saute le
+> routage de discipline, les gates GT1–GT8, le conseil adversarial et le scellement
+> WORM. Passer par `apex-turf-swarm`.
+
+
 Moteur de pricing pour les haies, le steeple-chase et le cross en France. Construit sur
 le même appareil de preuve que `apex-engine-trot-fr`, et **il en sort avec un verdict
 nettement moins favorable.** Cette section dit d'emblée ce qu'il faut en attendre.

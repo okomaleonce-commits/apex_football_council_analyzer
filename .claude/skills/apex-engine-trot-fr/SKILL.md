@@ -15,6 +15,12 @@ description: >
 
 # APEX-ENGINE TROT-FR v1.0
 
+> **Point d'entrée.** Depuis le 02/10/2026, ce moteur est un étage du swarm
+> `apex-turf-swarm` (agents `turf-t1` à `turf-t9`). L'invoquer directement saute le
+> routage de discipline, les gates GT1–GT8, le conseil adversarial et le scellement
+> WORM. Passer par `apex-turf-swarm`.
+
+
 Moteur de pricing pour le trot français. Contrairement aux moteurs football de la famille
 APEX, celui-ci est calibré sur données réelles et **valide ses propres limites** : la
 section « Domaine d'emploi » dit ce qu'il sait faire et, surtout, ce qu'il ne sait pas faire.

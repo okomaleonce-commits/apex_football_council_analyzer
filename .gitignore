@@ -1,0 +1,9 @@
+
+# APEX-TURF-WORM / APEX-TURF-MI — meme convention qu'Apex-TSS :
+# les snapshots et les runs ne sont pas versionnes (ils partent en artefacts CI).
+data/turf_worm/snapshots/*.jsonl
+data/turf_worm/mi/*.json
+runs_turf_mi/*
+!runs_turf_mi/.gitkeep
+reports/turf_worm/*
+!reports/turf_worm/.gitkeep

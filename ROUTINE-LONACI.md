@@ -130,3 +130,19 @@ WORM_EMAIL_FROM  par défaut WORM_SMTP_USER
 
 `apex_turf_worm.py` envoie alors seul, en STARTTLS. **Firecrawl reste nécessaire** :
 le SMTP ne règle que l'étape 3.
+
+---
+
+## Voie plus simple, ajoutée depuis : GitHub Actions
+
+Tout ce qui précède concerne la Routine claude.ai, qui a besoin de deux connecteurs. Il
+existe maintenant une voie **sans aucun connecteur** :
+`.github/workflows/apex-turf-worm.yml` fait seul le rendu du programme, le périmètre, le
+scan et l'envoi SMTP, toutes les heures.
+
+Il suffit de déclarer les secrets dans `Settings → Secrets and variables → Actions` du
+dépôt `Apex-TSS` (`WORM_SMTP_HOST`, `WORM_SMTP_PORT`, `WORM_SMTP_USER`, `WORM_SMTP_PASS`,
+`WORM_EMAIL_TO`). Voir la section « Voie entièrement autonome » du skill
+`apex-turf-worm-scanner`.
+
+Si cette voie marche au premier passage, la Routine claude.ai devient superflue.

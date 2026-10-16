@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>APEX Salle de Marché</title>
+<meta name="description" content="Salle de marché sportive APEX : dix bookmakers lus en continu, écarts de cotes et value chiffrés avant la mise. Modèle Poisson + conseil multi-agents. Produit éducatif, +18." />
+<style>
+  :root{
+    --bg:#0a0f1e; --bg2:#0e1527; --card:#121a30; --line:#1f2a45;
+    --fg:#eef2fb; --muted:#9aa6c4; --accent:#3ad6a0; --accent2:#4f8cff;
+    --warn:#ffb37a;
+  }
+  :root:not([data-theme="light"]){ color-scheme:dark; }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(79,140,255,.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(58,214,160,.10), transparent 55%),
+      var(--bg);
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+  a{color:inherit;text-decoration:none}
+
+  nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
+    background:rgba(10,15,30,.72);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .brand{font-weight:800;letter-spacing:.14em;font-size:18px}
+  .brand b{color:var(--accent)}
+  .navlinks{display:flex;gap:26px;font-size:14px;color:var(--muted)}
+  .navlinks a:hover{color:var(--fg)}
+  @media(max-width:720px){.navlinks{display:none}}
+  .btn{display:inline-block;background:var(--accent);color:#04231a;font-weight:800;
+    padding:11px 20px;border-radius:10px;font-size:14px;transition:transform .12s,box-shadow .12s;
+    box-shadow:0 6px 24px rgba(58,214,160,.25)}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(58,214,160,.38)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);box-shadow:none}
+
+  header.hero{padding:86px 0 60px;text-align:center}
+  .eyebrow{color:var(--accent);font-weight:700;letter-spacing:.2em;text-transform:uppercase;font-size:12px}
+  h1{font-size:clamp(34px,6.2vw,62px);line-height:1.04;margin:16px 0 14px;font-weight:800;letter-spacing:-.02em}
+  h1 .g{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--muted);font-size:clamp(16px,2.4vw,20px);max-width:660px;margin:0 auto 30px}
+  .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:54px 0 10px}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 16px;text-align:center}
+  .stat .v{font-size:32px;font-weight:800;color:var(--accent)}
+  .stat .l{color:var(--muted);font-size:13px;margin-top:4px}
+
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  .tag{color:var(--accent2);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+  h2{font-size:clamp(24px,4.4vw,38px);margin:12px 0 10px;font-weight:800;letter-spacing:-.01em}
+  .section-lead{color:var(--muted);max-width:640px}
+
+  .split{display:grid;grid-template-columns:1.1fr .9fr;gap:34px;align-items:center}
+  @media(max-width:820px){.split{grid-template-columns:1fr}}
+  .checks{list-style:none;padding:0;margin:20px 0 0}
+  .checks li{padding:12px 0 12px 32px;position:relative;border-bottom:1px solid var(--line);color:var(--fg)}
+  .checks li:before{content:"→";position:absolute;left:0;color:var(--accent);font-weight:800}
+  .panel{background:linear-gradient(180deg,var(--bg2),var(--card));border:1px solid var(--line);
+    border-radius:18px;padding:22px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px}
+  .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line);color:var(--muted)}
+  .row b{color:var(--fg)}
+  .pos{color:var(--accent)}
+
+  .modules{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px}
+  @media(max-width:720px){.modules{grid-template-columns:1fr}}
+  .mod{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;transition:border-color .15s,transform .15s}
+  .mod:hover{border-color:var(--accent);transform:translateY(-3px)}
+  .mod .n{color:var(--accent2);font-weight:800;font-size:13px;letter-spacing:.1em}
+  .mod h3{margin:10px 0 8px;font-size:19px}
+  .mod p{margin:0;color:var(--muted);font-size:15px}
+
+  .cta-band{text-align:center;background:linear-gradient(180deg,transparent,rgba(58,214,160,.06));border-radius:20px;padding:50px 20px;margin-top:10px;border:1px solid var(--line)}
+  .disclaimer{background:#1a1205;border:1px solid #3d2a0a;border-radius:12px;padding:18px;color:var(--warn);font-size:13.5px;margin-top:30px}
+  footer{padding:40px 0 64px;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand"><b>APEX</b> · SALLE DE MARCHÉ</div>
+  <div class="navlinks">
+    <a href="#modules">Modules</a>
+    <a href="#value">Value &amp; arbitrage</a>
+    <a href="#methode">Méthode</a>
+  </div>
+  <a class="btn" href="#start">Ouvrir la plateforme</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Salle de marché sportive</div>
+  <h1>Le football devient une <span class="g">opération de marché.</span></h1>
+  <p class="lead">Dix bookmakers lus en continu. L'écart de cotes et la value sont
+  <strong>chiffrés avant</strong> que tu engages la moindre mise — par un modèle, pas par l'intuition.</p>
+  <div class="hero-cta">
+    <a class="btn" href="#start">Ouvrir la plateforme</a>
+    <a class="btn ghost" href="#modules">Voir les modules</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v">10</div><div class="l">bookmakers lus en direct</div></div>
+    <div class="stat"><div class="v">4</div><div class="l">modules de décision</div></div>
+    <div class="stat"><div class="v">24/7</div><div class="l">scan des écarts de cotes</div></div>
+    <div class="stat"><div class="v">50k</div><div class="l">simulations Monte-Carlo / match</div></div>
+  </div>
+</div></header>
+
+<section id="value"><div class="wrap">
+  <div class="split">
+    <div>
+      <div class="tag">Écarts de cotes &amp; value</div>
+      <h2>On chiffre l'écart. Tu décides en connaissance de cause.</h2>
+      <p class="section-lead">Le scanner compare en continu les cotes de plusieurs
+      bookmakers, pré-match et en direct. Quand le marché se contredit, il reste un
+      écart : la plateforme le mesure, calcule la répartition des mises, et te montre
+      le gain théorique — avant que tu engages quoi que ce soit.</p>
+      <ul class="checks">
+        <li>Les deux issues comparées, l'écart mesuré en points</li>
+        <li>La répartition des mises calculée pour toi</li>
+        <li>Le edge et le ROI théorique affichés noir sur blanc</li>
+        <li>Les situations à risque signalées, pas masquées</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="row"><span>Match</span><b>Lyon – Nantes</b></div>
+      <div class="row"><span>Marché</span><b>Over 2.5</b></div>
+      <div class="row"><span>Proba modèle</span><b>54 %</b></div>
+      <div class="row"><span>Meilleure cote (10 books)</span><b>2.15</b></div>
+      <div class="row"><span>Proba implicite</span><b>47 %</b></div>
+      <div class="row"><span>Edge</span><b class="pos">+7.7 pts</b></div>
+      <div class="row"><span>ROI théorique</span><b class="pos">+9.2 %</b></div>
+      <div class="row" style="border:none"><span>Verdict</span><b class="pos">VALUE DÉTECTÉE</b></div>
+    </div>
+  </div>
+  <div class="disclaimer">
+    ⚠️ <strong>Honnêteté.</strong> Aucun pari n'est « sans risque ». Les bookmakers
+    limitent ou ferment les comptes qui arbitrent, les cotes bougent pendant la saisie,
+    et une erreur d'exécution annule l'écart. La plateforme <strong>mesure</strong> la
+    value et le risque — elle ne les supprime pas. Produit d'aide à la décision, pas une
+    promesse de gain.
+  </div>
+</div></section>
+
+<section id="modules"><div class="wrap">
+  <div class="tag">Ce que contient la plateforme</div>
+  <h2>Quatre moteurs, une seule salle de marché.</h2>
+  <div class="modules">
+    <div class="mod"><div class="n">01</div><h3>Scanner de value</h3>
+      <p>Les cotes de dix bookmakers comparées en continu. Quand un écart crée de la
+      value mesurable, la plateforme calcule la répartition des mises et affiche le edge.</p></div>
+    <div class="mod"><div class="n">02</div><h3>Générateur de coupons</h3>
+      <p>Choisis un sport, un bookmaker, une cote cible : le coupon est construit avec
+      des cotes relues à la seconde, puis renvoyé prêt à charger.</p></div>
+    <div class="mod"><div class="n">03</div><h3>Pronostics modélisés</h3>
+      <p>Chaque match passe au modèle Poisson + conseil multi-agents. Une seule lecture
+      par rencontre, avec sa justification et son résultat vérifié après coup.</p></div>
+    <div class="mod"><div class="n">04</div><h3>Bankroll &amp; montante</h3>
+      <p>Paliers calculés pas à pas et staking Kelly fractionné pour faire croître un
+      capital sans le mettre en danger sur une mauvaise série.</p></div>
+  </div>
+</div></section>
+
+<section id="methode"><div class="wrap">
+  <div class="tag">Le moteur derrière</div>
+  <h2>Pas une boîte noire : la méthode APEX.</h2>
+  <p class="section-lead">Score de qualité des données → modèle de Poisson → prix juste
+  → détection de value (edge &amp; ROI) → conseil multi-agents → verdict. Six étapes,
+  chacune peut dire « on ne parie pas ». La discipline avant la mise.</p>
+</div></section>
+
+<section id="start"><div class="wrap">
+  <div class="cta-band">
+    <div class="eyebrow">Les écarts de cote n'attendent pas</div>
+    <h2>Ouvre la salle de marché.</h2>
+    <p class="section-lead" style="margin:0 auto 24px">Connecte-toi, laisse le scanner
+    travailler, et ne mise que lorsque le modèle voit un écart réel.</p>
+    <a class="btn" href="#">Commencer maintenant</a>
+  </div>
+  <div class="disclaimer">
+    ⚠️ Plateforme d'aide à la décision à vocation éducative. Pas un conseil financier,
+    pas une garantie de gain. Les paris sportifs comportent un risque de perte, de
+    dépendance et d'endettement. Réservé aux personnes majeures (+18). En France :
+    Joueurs Info Service — 09 74 75 13 13.
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  APEX · Salle de marché sportive © 2026 — produit éducatif · pas un conseil financier · +18
+</div></footer>
+
+</body>
+</html>

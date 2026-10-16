@@ -15,9 +15,21 @@ _DB_PATH = "apex.db"
 
 
 def configure(db_path: str) -> None:
+    """Configure le chemin de la base. Robuste : crée le dossier si besoin et
+    bascule sur une base locale si le chemin visé est inaccessible (ex. disque
+    persistant non monté), pour que l'app démarre au lieu de planter (502)."""
     global _DB_PATH
-    _DB_PATH = str(Path(db_path).resolve())
-    init_db()
+    target = Path(db_path)
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        _DB_PATH = str(target.resolve())
+        init_db()
+    except (OSError, sqlite3.Error) as exc:
+        fallback = Path(__file__).resolve().parent.parent / "apex.db"
+        print(f"[db] chemin '{db_path}' inaccessible ({exc}); repli local sur {fallback}. "
+              f"⚠️ Base NON persistante : monte un disque sur ce chemin pour conserver les comptes.")
+        _DB_PATH = str(fallback)
+        init_db()
 
 
 @contextmanager

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>APEX Pronostics</title>
+<meta name="description" content="Pronostic du jour APEX : chaque match passé au modèle Poisson + conseil multi-agents, avec verdict, value et grille des scores." />
+<style>
+  :root{--bg:#0a0f1e;--card:#121a30;--line:#1f2a45;--fg:#eef2fb;--muted:#9aa6c4;
+    --accent:#3ad6a0;--accent2:#4f8cff;--warn:#ffb37a;--bad:#ff6b6b}
+  :root:not([data-theme="light"]){color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+  header{border-bottom:1px solid var(--line);padding:20px 0}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .brand{font-weight:800;letter-spacing:.14em}.brand b{color:var(--accent)}
+  .nav a{color:var(--muted);font-size:14px;margin-left:18px;text-decoration:none}.nav a:hover{color:var(--fg)}
+  .badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid var(--line)}
+  .badge.demo{color:var(--warn);border-color:var(--warn)}.badge.live{color:var(--accent);border-color:var(--accent)}
+  h1{font-size:22px;margin:24px 0 2px}.sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.cards{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:border-color .15s,transform .15s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .card .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card .mtch{font-weight:700;font-size:15px}
+  .vb{font-size:11px;font-weight:800;padding:3px 9px;border-radius:7px;white-space:nowrap}
+  .vb.bet{background:rgba(58,214,160,.15);color:var(--accent)}
+  .vb.mon{background:rgba(79,140,255,.15);color:var(--accent2)}
+  .vb.no{background:#20273b;color:var(--muted)}
+  .vb.wait{background:rgba(255,179,122,.14);color:var(--warn)}
+  .pick{margin-top:10px;font-size:13.5px;color:var(--muted)}.pick b{color:var(--fg)}
+  .bar{display:flex;height:7px;border-radius:5px;overflow:hidden;margin-top:12px;background:#20273b}
+  .bar i{display:block;height:100%}
+  .bar .h{background:var(--accent)}.bar .d{background:#5b6580}.bar .a{background:var(--accent2)}
+  .bl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+
+  /* Modal */
+  .overlay{position:fixed;inset:0;background:rgba(3,6,14,.78);display:none;align-items:flex-start;justify-content:center;padding:28px 14px;overflow:auto;z-index:40}
+  .overlay.open{display:flex}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:18px;max-width:640px;width:100%;padding:24px}
+  .modal h2{margin:0 0 2px;font-size:20px}
+  .close{float:right;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+  .section{margin-top:18px}
+  .section h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px}
+  .prob{margin:8px 0}
+  .prob .pl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+  .track{height:8px;background:#20273b;border-radius:5px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--accent2)}
+  .scores{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  @media(max-width:520px){.scores{grid-template-columns:repeat(4,1fr)}}
+  .sc{background:#0e1527;border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center}
+  .sc .s{font-weight:800;font-size:14px}.sc .p{color:var(--muted);font-size:11px}
+  table.sig{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.sig th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase}
+  table.sig td{padding:8px;border-bottom:1px solid var(--line)}
+  .tagv{font-weight:800}.tagv.V{color:var(--accent)}.tagv.L{color:var(--accent2)}
+  .adv{background:#0e1527;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+  .adv b{color:var(--fg)}.adv .r{color:var(--muted)}
+  .reco{background:rgba(58,214,160,.08);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px}
+  .warn{color:var(--warn);font-size:12.5px;margin-top:6px}
+  .disclaimer{background:#1a1205;border:1px solid #3d2a0a;border-radius:12px;padding:14px;color:var(--warn);font-size:12.5px;margin:26px 0 50px}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="brand"><b>APEX</b> · PRONOSTICS</div>
+  <div class="nav">
+    <a href="/platform">Accueil</a><a href="/board">Board</a><a href="/coupons">Coupons</a>
+    <span id="mode" class="badge demo">—</span>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <h1>Pronostic du jour</h1>
+  <p class="sub">Chaque match passé au modèle Poisson + conseil multi-agents. Clique un match pour l'analyse complète.</p>
+  <div class="cards" id="cards"></div>
+  <div class="disclaimer">
+    ⚠️ Analyse statistique à vocation éducative, pas un conseil financier ni une
+    garantie. Le modèle peut se tromper. Pas de pari sur données insuffisantes. +18 ·
+    Joueurs Info Service 09 74 75 13 13.
+  </div>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<script>
+const API = "";
+const modeEl = document.getElementById("mode");
+let DATA = [];
+
+const EMBEDDED = [{"request": {"home": "Olympique Lyonnais", "away": "FC Nantes", "league": "Ligue 1"}, "data_quality": {"score": 0.95, "verdict": "GOOD"}, "probabilities": {"home_win": 0.5912, "draw": 0.2213, "away_win": 0.1874, "over_2_5": 0.542, "under_2_5": 0.458, "btts_yes": 0.5238, "btts_no": 0.4762, "lambda_home": 1.89, "lambda_away": 0.96, "most_likely_scores": [{"score": "1-0", "probability": 0.1094}, {"score": "1-1", "probability": 0.105}, {"score": "2-0", "probability": 0.1034}, {"score": "2-1", "probability": 0.0993}, {"score": "3-0", "probability": 0.0651}, {"score": "3-1", "probability": 0.0625}, {"score": "0-0", "probability": 0.0579}]}, "final_verdict": "BET", "primary_bet": {"market": "OVER_UNDER_2_5", "selection": "OVER_2_5", "probability": 0.542, "fair_odds": 1.845, "best_odds": 2.15, "edge": 0.0769, "roi_estimate": 0.1653, "confidence": 0.515, "status": "VALIDATED", "rationale": "Plus de 2.5 buts"}, "market_signals": [{"market": "OVER_UNDER_2_5", "selection": "OVER_2_5", "probability": 0.542, "fair_odds": 1.845, "best_odds": 2.15, "edge": 0.0769, "roi_estimate": 0.1653, "confidence": 0.515, "status": "VALIDATED", "rationale": "Plus de 2.5 buts"}, {"market": "1X2", "selection": "HOME", "probability": 0.5912, "fair_odds": 1.691, "best_odds": 1.8, "edge": 0.0356, "roi_estimate": 0.0642, "confidence": 0.562, "status": "VALIDATED", "rationale": "Victoire domicile"}, {"market": "DOUBLE_CHANCE", "selection": "1X", "probability": 0.8126, "fair_odds": 1.231, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.772, "status": "LEAN", "rationale": "Domicile ou nul"}, {"market": "DOUBLE_CHANCE", "selection": "12", "probability": 0.7787, "fair_odds": 1.284, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.74, "status": "LEAN", "rationale": "Pas de nul"}], "council": {"recommendation": "Signal principal : OVER_UNDER_2_5 OVER_2_5.", "first_action": "Vérifier les lineups et les cotes proches du coup d'envoi.", "advisors": [{"advisor": "Contrarian", "position": "Cherche les pièges de marché", "risks": [], "recommendation": "Refuser si la cote ne dépasse pas la fair odds."}, {"advisor": "First Principles", "position": "Valide la logique statistique", "risks": ["Données exploitables."], "recommendation": "Ne jamais confondre probabilité élevée et value bet."}, {"advisor": "Executor", "position": "Transforme l'analyse en action", "risks": [], "recommendation": "Signal principal : OVER_UNDER_2_5 OVER_2_5."}]}, "warnings": []}, {"request": {"home": "Paris Saint-Germain", "away": "Le Havre", "league": "Ligue 1"}, "data_quality": {"score": 0.95, "verdict": "GOOD"}, "probabilities": {"home_win": 0.7504, "draw": 0.1583, "away_win": 0.0913, "over_2_5": 0.6082, "under_2_5": 0.3918, "btts_yes": 0.4679, "btts_no": 0.5321, "lambda_home": 2.43, "lambda_away": 0.72, "most_likely_scores": [{"score": "2-0", "probability": 0.127}, {"score": "1-0", "probability": 0.1045}, {"score": "3-0", "probability": 0.1028}, {"score": "2-1", "probability": 0.0914}, {"score": "1-1", "probability": 0.0752}, {"score": "3-1", "probability": 0.0741}, {"score": "4-0", "probability": 0.0625}]}, "final_verdict": "MONITOR_LIVE", "primary_bet": null, "market_signals": [{"market": "DOUBLE_CHANCE", "selection": "1X", "probability": 0.9087, "fair_odds": 1.1, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.863, "status": "LEAN", "rationale": "Domicile ou nul"}, {"market": "DOUBLE_CHANCE", "selection": "12", "probability": 0.8417, "fair_odds": 1.188, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.8, "status": "LEAN", "rationale": "Pas de nul"}], "council": {"recommendation": "NO BET par défaut : données ou value insuffisantes.", "first_action": "Vérifier les lineups et les cotes proches du coup d'envoi.", "advisors": [{"advisor": "Contrarian", "position": "Cherche les pièges de marché", "risks": [], "recommendation": "Refuser si la cote ne dépasse pas la fair odds."}, {"advisor": "First Principles", "position": "Valide la logique statistique", "risks": ["Données exploitables."], "recommendation": "Ne jamais confondre probabilité élevée et value bet."}, {"advisor": "Executor", "position": "Transforme l'analyse en action", "risks": [], "recommendation": "NO BET par défaut : données ou value insuffisantes."}]}, "warnings": ["Signal intéressant mais edge insuffisant ou cote absente."]}, {"request": {"home": "Olympique de Marseille", "away": "LOSC Lille", "league": "Ligue 1"}, "data_quality": {"score": 0.95, "verdict": "GOOD"}, "probabilities": {"home_win": 0.4338, "draw": 0.2524, "away_win": 0.3138, "over_2_5": 0.5208, "under_2_5": 0.4792, "btts_yes": 0.5557, "btts_no": 0.4443, "lambda_home": 1.512, "lambda_away": 1.248, "most_likely_scores": [{"score": "1-1", "probability": 0.1195}, {"score": "1-0", "probability": 0.0957}, {"score": "2-1", "probability": 0.0903}, {"score": "0-1", "probability": 0.079}, {"score": "1-2", "probability": 0.0745}, {"score": "2-0", "probability": 0.0724}, {"score": "0-0", "probability": 0.0633}]}, "final_verdict": "MONITOR_LIVE", "primary_bet": null, "market_signals": [{"market": "DOUBLE_CHANCE", "selection": "12", "probability": 0.7476, "fair_odds": 1.338, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.71, "status": "LEAN", "rationale": "Pas de nul"}, {"market": "DOUBLE_CHANCE", "selection": "1X", "probability": 0.6862, "fair_odds": 1.457, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.652, "status": "LEAN", "rationale": "Domicile ou nul"}], "council": {"recommendation": "NO BET par défaut : données ou value insuffisantes.", "first_action": "Vérifier les lineups et les cotes proches du coup d'envoi.", "advisors": [{"advisor": "Contrarian", "position": "Cherche les pièges de marché", "risks": [], "recommendation": "Refuser si la cote ne dépasse pas la fair odds."}, {"advisor": "First Principles", "position": "Valide la logique statistique", "risks": ["Données exploitables."], "recommendation": "Ne jamais confondre probabilité élevée et value bet."}, {"advisor": "Executor", "position": "Transforme l'analyse en action", "risks": [], "recommendation": "NO BET par défaut : données ou value insuffisantes."}]}, "warnings": ["Signal intéressant mais edge insuffisant ou cote absente."]}, {"request": {"home": "AS Monaco", "away": "RC Lens", "league": "Ligue 1"}, "data_quality": {"score": 0.95, "verdict": "GOOD"}, "probabilities": {"home_win": 0.4157, "draw": 0.2849, "away_win": 0.2994, "over_2_5": 0.3906, "under_2_5": 0.6094, "btts_yes": 0.4516, "btts_no": 0.5484, "lambda_home": 1.242, "lambda_away": 1.008, "most_likely_scores": [{"score": "1-1", "probability": 0.132}, {"score": "1-0", "probability": 0.1309}, {"score": "0-1", "probability": 0.1062}, {"score": "0-0", "probability": 0.1054}, {"score": "2-1", "probability": 0.0819}, {"score": "2-0", "probability": 0.0813}, {"score": "1-2", "probability": 0.0665}]}, "final_verdict": "MONITOR_LIVE", "primary_bet": null, "market_signals": [{"market": "DOUBLE_CHANCE", "selection": "12", "probability": 0.7151, "fair_odds": 1.398, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.679, "status": "LEAN", "rationale": "Pas de nul"}, {"market": "DOUBLE_CHANCE", "selection": "1X", "probability": 0.7006, "fair_odds": 1.427, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.666, "status": "LEAN", "rationale": "Domicile ou nul"}], "council": {"recommendation": "NO BET par défaut : données ou value insuffisantes.", "first_action": "Vérifier les lineups et les cotes proches du coup d'envoi.", "advisors": [{"advisor": "Contrarian", "position": "Cherche les pièges de marché", "risks": [], "recommendation": "Refuser si la cote ne dépasse pas la fair odds."}, {"advisor": "First Principles", "position": "Valide la logique statistique", "risks": ["Données exploitables."], "recommendation": "Ne jamais confondre probabilité élevée et value bet."}, {"advisor": "Executor", "position": "Transforme l'analyse en action", "risks": [], "recommendation": "NO BET par défaut : données ou value insuffisantes."}]}, "warnings": ["Signal intéressant mais edge insuffisant ou cote absente."]}, {"request": {"home": "Stade Rennais", "away": "RC Strasbourg", "league": "Ligue 1"}, "data_quality": {"score": 0.95, "verdict": "GOOD"}, "probabilities": {"home_win": 0.4195, "draw": 0.2393, "away_win": 0.3412, "over_2_5": 0.5899, "under_2_5": 0.4101, "btts_yes": 0.612, "btts_no": 0.388, "lambda_home": 1.62, "lambda_away": 1.44, "most_likely_scores": [{"score": "1-1", "probability": 0.1094}, {"score": "2-1", "probability": 0.0886}, {"score": "1-2", "probability": 0.0788}, {"score": "1-0", "probability": 0.076}, {"score": "0-1", "probability": 0.0675}, {"score": "2-2", "probability": 0.0638}, {"score": "2-0", "probability": 0.0616}]}, "final_verdict": "BET", "primary_bet": {"market": "1X2", "selection": "AWAY", "probability": 0.3412, "fair_odds": 2.931, "best_odds": 3.3, "edge": 0.0382, "roi_estimate": 0.126, "confidence": 0.324, "status": "VALIDATED", "rationale": "Victoire extérieur"}, "market_signals": [{"market": "1X2", "selection": "AWAY", "probability": 0.3412, "fair_odds": 2.931, "best_odds": 3.3, "edge": 0.0382, "roi_estimate": 0.126, "confidence": 0.324, "status": "VALIDATED", "rationale": "Victoire extérieur"}, {"market": "DOUBLE_CHANCE", "selection": "12", "probability": 0.7607, "fair_odds": 1.315, "best_odds": null, "edge": null, "roi_estimate": null, "confidence": 0.723, "status": "LEAN", "rationale": "Pas de nul"}], "council": {"recommendation": "Signal principal : 1X2 AWAY.", "first_action": "Vérifier les lineups et les cotes proches du coup d'envoi.", "advisors": [{"advisor": "Contrarian", "position": "Cherche les pièges de marché", "risks": [], "recommendation": "Refuser si la cote ne dépasse pas la fair odds."}, {"advisor": "First Principles", "position": "Valide la logique statistique", "risks": ["Données exploitables."], "recommendation": "Ne jamais confondre probabilité élevée et value bet."}, {"advisor": "Executor", "position": "Transforme l'analyse en action", "risks": [], "recommendation": "Signal principal : 1X2 AWAY."}]}, "warnings": []}];
+
+const VERDICT = {
+  BET:{t:"SIGNAL VALIDÉ",c:"bet"}, MONITOR_LIVE:{t:"À SURVEILLER",c:"mon"},
+  NO_BET:{t:"ON PASSE",c:"no"}, WAIT_DATA:{t:"DONNÉES INSUFF.",c:"wait"},
+  WAIT_LINEUPS:{t:"ATTENDRE COMPOS",c:"wait"},
+};
+const pct = x => Math.round((x||0)*100)+"%";
+
+function card(r,i){
+  const v = VERDICT[r.final_verdict]||{t:r.final_verdict,c:"no"};
+  const p = r.probabilities;
+  const pick = r.primary_bet
+    ? `Pick : <b>${r.primary_bet.rationale}</b> @ ${r.primary_bet.best_odds} · edge +${(r.primary_bet.edge*100).toFixed(1)} pts`
+    : `Pas de value validée — à surveiller`;
+  return `<div class="card" data-i="${i}">
+    <div class="top"><span class="mtch">${r.request.home} – ${r.request.away}</span>
+      <span class="vb ${v.c}">${v.t}</span></div>
+    <div class="pick">${pick}</div>
+    <div class="bar">
+      <i class="h" style="width:${p.home_win*100}%"></i>
+      <i class="d" style="width:${p.draw*100}%"></i>
+      <i class="a" style="width:${p.away_win*100}%"></i></div>
+    <div class="bl"><span>1 ${pct(p.home_win)}</span><span>N ${pct(p.draw)}</span><span>2 ${pct(p.away_win)}</span></div>
+  </div>`;
+}
+
+function probRow(label,val){
+  return `<div class="prob"><div class="pl"><span>${label}</span><span>${pct(val)}</span></div>
+    <div class="track"><i style="width:${val*100}%"></i></div></div>`;
+}
+
+function detail(r){
+  const p = r.probabilities;
+  const scores = (p.most_likely_scores||[]).map(s=>`<div class="sc"><div class="s">${s.score}</div><div class="p">${pct(s.probability)}</div></div>`).join("");
+  const sigs = (r.market_signals||[]).map(s=>`<tr>
+    <td>${s.rationale}</td><td>${pct(s.probability)}</td>
+    <td>${s.best_odds?s.best_odds.toFixed(2):"—"}</td>
+    <td>${s.edge!=null?("+"+(s.edge*100).toFixed(1)):"—"}</td>
+    <td class="tagv ${s.status[0]}">${s.status==="VALIDATED"?"VALUE":"LEAN"}</td></tr>`).join("");
+  const advs = (r.council.advisors||[]).map(a=>`<div class="adv"><b>${a.advisor}</b> — ${a.position}<br><span class="r">${a.recommendation}</span></div>`).join("");
+  const warns = (r.warnings||[]).map(w=>`<div class="warn">⚠️ ${w}</div>`).join("");
+  const v = VERDICT[r.final_verdict]||{t:r.final_verdict,c:"no"};
+  return `<button class="close" id="x">×</button>
+    <h2>${r.request.home} – ${r.request.away}</h2>
+    <div style="color:var(--muted);font-size:13px">${r.request.league} · qualité données ${pct(r.data_quality.score)} (${r.data_quality.verdict}) · <span class="vb ${v.c}">${v.t}</span></div>
+
+    <div class="section"><h3>Buts attendus (λ)</h3>
+      <div style="font-size:14px">${r.request.home} <b>${p.lambda_home}</b> · ${r.request.away} <b>${p.lambda_away}</b></div></div>
+
+    <div class="section"><h3>Probabilités du modèle</h3>
+      ${probRow("Victoire "+r.request.home, p.home_win)}
+      ${probRow("Match nul", p.draw)}
+      ${probRow("Victoire "+r.request.away, p.away_win)}
+      ${probRow("Plus de 2.5 buts", p.over_2_5)}
+      ${probRow("Les deux marquent", p.btts_yes)}</div>
+
+    <div class="section"><h3>Scores les plus probables</h3><div class="scores">${scores}</div></div>
+
+    <div class="section"><h3>Signaux de value</h3>
+      <table class="sig"><thead><tr><th>Marché</th><th>Proba</th><th>Cote</th><th>Edge</th><th>Statut</th></tr></thead>
+      <tbody>${sigs||'<tr><td colspan="5" style="color:var(--muted)">Aucun signal exploitable.</td></tr>'}</tbody></table></div>
+
+    <div class="section"><h3>Conseil multi-agents</h3>
+      <div class="reco"><b>${r.council.recommendation}</b><br><span style="color:var(--muted)">Première action : ${r.council.first_action}</span></div>
+      <div style="margin-top:10px">${advs}</div>${warns}</div>`;
+}
+
+function render(){
+  document.getElementById("cards").innerHTML = DATA.map(card).join("");
+  document.querySelectorAll(".card").forEach(c=>c.onclick=()=>open(DATA[+c.dataset.i]));
+}
+function open(r){
+  document.getElementById("modal").innerHTML = detail(r);
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("x").onclick = close;
+}
+function close(){ document.getElementById("overlay").classList.remove("open"); }
+document.getElementById("overlay").onclick = e=>{ if(e.target.id==="overlay") close(); };
+
+async function load(){
+  try{
+    const res = await fetch(`${API}/api/predictions?league=Ligue%201`);
+    const data = await res.json();
+    modeEl.textContent = data.mode==="live"?"EN DIRECT":"DÉMO";
+    modeEl.className = "badge "+(data.mode==="live"?"live":"demo");
+    DATA = (data.predictions&&data.predictions.length)?data.predictions:EMBEDDED;
+  }catch(e){ modeEl.textContent="DÉMO"; modeEl.className="badge demo"; DATA = EMBEDDED; }
+  render();
+}
+load();
+</script>
+</body>
+</html>

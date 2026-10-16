@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.analyzer import FootballAnalyzer
 from app.core.coupon import CouponRequest, build_coupon
 from app.core.data_fetcher import DataFetcher
+from app.core.demo import demo_packs
 from app.core.scanner import demo_signals, scan_payload
 from app.models import MatchAnalysisRequest
 from app.settings import get_settings
@@ -90,6 +91,17 @@ async def coupon(req: CouponRequest):
     return build_coupon(req).model_dump(mode="json")
 
 
+@app.get("/api/predictions")
+async def predictions(league: str = Query(default="Ligue 1")):
+    """Module Pronostic du jour : chaque match passé au moteur (Poisson + conseil).
+
+    En démo (sans clés), utilise des matchs pré-remplis analysés par le vrai moteur.
+    """
+    reports = [analyzer.analyze(pack) for pack in demo_packs(league)]
+    return {"mode": "demo", "league": league,
+            "predictions": [r.model_dump(mode="json") for r in reports]}
+
+
 @app.get("/platform")
 async def platform_landing():
     return FileResponse(PLATFORM_DIR / "index.html")
@@ -103,3 +115,8 @@ async def platform_board():
 @app.get("/coupons")
 async def platform_coupons():
     return FileResponse(PLATFORM_DIR / "coupons.html")
+
+
+@app.get("/predictions")
+async def platform_predictions():
+    return FileResponse(PLATFORM_DIR / "predictions.html")

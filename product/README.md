@@ -35,13 +35,16 @@ Une fois en place, la vente et la livraison, elles, sont automatiques. C'est ça
 
 1. **Relis et personnalise** `guide/APEX-Framework-Guide.md` (ton nom, ta marque,
    ajoute tes propres exemples pour le rendre unique).
-2. **Exporte-le en PDF.** Options :
-   - VS Code + extension « Markdown PDF », ou
-   - `pandoc guide/APEX-Framework-Guide.md -o APEX-Framework.pdf`, ou
-   - colle-le dans un Google Doc → Fichier → Télécharger → PDF.
-3. **Mets le worksheet** (`templates/match-analysis-worksheet.csv`) dans le même
-   pack. Ouvre-le dans Excel/Google Sheets pour vérifier.
-4. Zippe le tout : `APEX-Framework-Pack.zip` (PDF + CSV).
+2. **Construis le pack automatiquement** :
+   ```bash
+   pip install -r product/requirements-build.txt   # weasyprint (une fois)
+   python product/build.py
+   ```
+   Le script génère le PDF stylé et assemble `product/dist/APEX-Framework-Pack.zip`
+   (PDF + worksheet). Il te faut `pandoc` installé au niveau système
+   (https://pandoc.org/installing.html). Sans moteur PDF, le pack contient le HTML :
+   ouvre-le et fais « Imprimer → Enregistrer en PDF ».
+3. Le ZIP est prêt à uploader — c'est le fichier que tes clients recevront.
 
 ## Étape 2 — Mettre en vente (le « moteur »)
 

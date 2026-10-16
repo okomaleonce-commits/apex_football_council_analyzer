@@ -13,6 +13,7 @@ env/
 .cache/
 *.sqlite
 *.db
+product/dist/
 
 # OS
 .DS_Store

@@ -31,7 +31,7 @@ if str(REPO_ROOT) not in sys.path:
 from app.models import AnalysisReport  # noqa: E402
 
 # --- À personnaliser ---------------------------------------------------------
-PRODUCT_URL = "https://TON-COMPTE.gumroad.com/l/apex-framework"
+PRODUCT_URL = "https://apex-football-council-analyzer.onrender.com"  # plateforme live
 BRAND = "APEX"
 DISCLAIMER = "Analyse, pas un conseil. Jouer comporte des risques. +18."
 # -----------------------------------------------------------------------------
@@ -130,9 +130,9 @@ def build_tiktok_carousel(report: AnalysisReport) -> list[str]:
 
     # Slide 6 — CTA
     slides.append(
-        "[LA MÉTHODE COMPLÈTE]\n"
-        f"Les 6 étapes, les formules, le worksheet.\n"
-        f"Le Framework {BRAND} → lien en bio.\n{PRODUCT_URL}"
+        "[FAIS-LE TOI-MÊME]\n"
+        f"Scanner de value, pronostics modélisés, coupons, montante.\n"
+        f"La plateforme {BRAND} → lien en bio.\n{PRODUCT_URL}"
     )
     return slides
 
@@ -175,7 +175,7 @@ def build_x_thread(report: AnalysisReport) -> list[str]:
     posts.append(
         f"4/ Verdict : {_VERDICT_FR.get(r.final_verdict, r.final_verdict)}.\n"
         f"{DISCLAIMER}\n\n"
-        f"La méthode complète (6 étapes + worksheet) : {PRODUCT_URL}"
+        f"Analyse tes propres matchs sur la plateforme {BRAND} : {PRODUCT_URL}"
     )
     return posts
 

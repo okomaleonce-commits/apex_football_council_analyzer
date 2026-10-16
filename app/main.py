@@ -49,6 +49,13 @@ def _set_session_cookie(response: Response, token: str) -> None:
 
 @app.get("/")
 async def index():
+    # Page d'accueil = la vitrine de la plateforme (l'ancienne interface
+    # technique reste accessible sur /analyzer).
+    return FileResponse(PLATFORM_DIR / "index.html")
+
+
+@app.get("/analyzer")
+async def analyzer_ui():
     return FileResponse(STATIC_DIR / "index.html")
 
 

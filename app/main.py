@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.analyzer import FootballAnalyzer
+from app.core.coupon import CouponRequest, build_coupon
 from app.core.data_fetcher import DataFetcher
 from app.core.scanner import demo_signals, scan_payload
 from app.models import MatchAnalysisRequest
@@ -83,6 +84,12 @@ async def scan(league: str = Query(default="Ligue 1"), edge_min: float | None = 
             "signals": [s.model_dump(mode="json") for s in signals]}
 
 
+@app.post("/api/coupon")
+async def coupon(req: CouponRequest):
+    """Module Générateur de coupons : combine des sélections en un coupon chiffré."""
+    return build_coupon(req).model_dump(mode="json")
+
+
 @app.get("/platform")
 async def platform_landing():
     return FileResponse(PLATFORM_DIR / "index.html")
@@ -91,3 +98,8 @@ async def platform_landing():
 @app.get("/board")
 async def platform_board():
     return FileResponse(PLATFORM_DIR / "dashboard.html")
+
+
+@app.get("/coupons")
+async def platform_coupons():
+    return FileResponse(PLATFORM_DIR / "coupons.html")

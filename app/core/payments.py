@@ -21,10 +21,14 @@ def new_transaction_id() -> str:
     return "APEX-" + secrets.token_hex(10)
 
 
-async def init_payment(settings, transaction_id: str, amount: int, description: str) -> dict:
-    """Renvoie {payment_url, mode}. Lève une exception en cas d'échec live."""
+async def init_payment(settings, base_url: str, transaction_id: str, amount: int, description: str) -> dict:
+    """Renvoie {payment_url, mode}. `base_url` = origine publique du service.
+
+    Lève une exception en cas d'échec live.
+    """
+    base_url = base_url.rstrip("/")
     if settings.payments_mode != "live" or not (settings.cinetpay_api_key and settings.cinetpay_site_id):
-        return {"mode": "demo", "payment_url": f"{settings.app_base_url}/pay/demo?tx={transaction_id}"}
+        return {"mode": "demo", "payment_url": f"{base_url}/pay/demo?tx={transaction_id}"}
 
     payload = {
         "apikey": settings.cinetpay_api_key,
@@ -33,8 +37,8 @@ async def init_payment(settings, transaction_id: str, amount: int, description: 
         "amount": amount,
         "currency": settings.subscription_currency,
         "description": description,
-        "notify_url": f"{settings.app_base_url}/api/payments/webhook",
-        "return_url": f"{settings.app_base_url}/account",
+        "notify_url": f"{base_url}/api/payments/webhook",
+        "return_url": f"{base_url}/account",
         "channels": "ALL",
     }
     async with httpx.AsyncClient(timeout=20) as client:

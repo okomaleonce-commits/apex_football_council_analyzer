@@ -4,7 +4,14 @@ services:
     env: python
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /health
+    # Disque persistant : indispensable, sinon la base SQLite (comptes,
+    # abonnements) est effacée à chaque redéploiement.
+    disk:
+      name: apex-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: APP_ENV
         value: production
@@ -14,3 +21,34 @@ services:
         value: "0.60"
       - key: EDGE_MIN
         value: "0.035"
+
+      # Comptes & abonnement
+      - key: DB_PATH
+        value: /var/data/apex.db          # sur le disque persistant
+      - key: SECRET_KEY
+        generateValue: true               # Render génère un secret fort
+      - key: SESSION_DAYS
+        value: "30"
+      - key: SUBSCRIPTION_DAYS
+        value: "30"
+      - key: SUBSCRIPTION_PRICE
+        value: "5000"
+      - key: SUBSCRIPTION_CURRENCY
+        value: "XOF"
+      # Optionnel : l'URL publique est auto-détectée depuis la requête.
+      # Ne la renseigne que si tu utilises un domaine personnalisé.
+      - key: APP_BASE_URL
+        sync: false
+
+      # Paiement mobile money (CinetPay) — laisser "demo" tant que tu n'as
+      # pas tes clés marchand ; passer à "live" ensuite.
+      - key: PAYMENTS_MODE
+        value: demo
+      - key: CINETPAY_API_KEY
+        sync: false
+      - key: CINETPAY_SITE_ID
+        sync: false
+
+      # Flux de cotes (optionnel) — active le mode "live" du scanner
+      - key: ODDS_API_KEY
+        sync: false

@@ -114,8 +114,12 @@ async def subscribe(request: Request):
         raise HTTPException(status_code=401, detail="Connecte-toi d'abord.")
     tx = pay.new_transaction_id()
     db.create_payment(tx, user["id"], settings.subscription_price, settings.subscription_currency)
+    # URL publique : réglage explicite si fourni (non-localhost), sinon déduite de la requête.
+    base_url = settings.app_base_url
+    if not base_url.startswith("http") or "localhost" in base_url or "127.0.0.1" in base_url:
+        base_url = str(request.base_url)
     try:
-        init = await pay.init_payment(settings, tx, settings.subscription_price,
+        init = await pay.init_payment(settings, base_url, tx, settings.subscription_price,
                                       f"Abonnement APEX {settings.subscription_days} jours")
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Paiement indisponible : {exc}")

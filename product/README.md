@@ -48,19 +48,24 @@ Une fois en place, la vente et la livraison, elles, sont automatiques. C'est ça
 
 ## Étape 2 — Mettre en vente (le « moteur »)
 
-**Recommandation : Gumroad.** C'est le plus proche du passif car il gère le
-paiement, la livraison automatique du fichier, les factures et la TVA/VAT à ta
-place. Lemon Squeezy est une alternative (meilleure gestion TVA EU, « merchant of
-record »). Stripe Payment Links si tu veux juste un lien de paiement, mais tu gères
-la livraison toi-même.
+**Choisis la plateforme selon ta région** : ce qui compte, ce n'est pas la carte
+mais la capacité de la plateforme à te *verser* l'argent là où tu vis.
 
-Sur Gumroad :
-1. Crée un compte → New Product → Digital product.
+- **Europe / Amérique du N.** : Lemon Squeezy ou Gumroad (gèrent TVA + livraison).
+- **Afrique francophone** : **Selar** (⭐ conçu pour les créateurs africains, paie
+  sur compte bancaire local + Mobile Money) ou **Flutterwave** (cartes locales,
+  Mobile Money, virements). Gumroad et Stripe ne versent pas dans la plupart de ces
+  pays — ne perds pas de temps avec eux. Payhip marche seulement si ton PayPal peut
+  *recevoir* (variable selon le pays).
+
+Quelle que soit la plateforme, le principe est identique :
+1. Crée un compte → nouveau produit → produit numérique.
 2. Upload `APEX-Framework-Pack.zip`.
-3. Prix de départ suggéré : **19 €** (voir pricing ci-dessous).
-4. Récupère l'URL du produit (ex. `https://ton-compte.gumroad.com/l/apex-framework`).
-5. **Colle cette URL** dans `sales-page/index.html` — cherche le commentaire
-   `REMPLACE l'URL ci-dessous` (ligne du bouton « Acheter maintenant »).
+3. Prix de départ suggéré : **~10 000 FCFA / 19 €** (voir pricing ci-dessous).
+4. Récupère l'URL publique du produit.
+5. **Colle cette URL** dans `sales-page/index.html` (commentaire
+   `REMPLACE l'URL ci-dessous`, bouton « Acheter maintenant ») **et** dans
+   `traffic-engine/content_generator.py` (variable `PRODUCT_URL`).
 
 ## Étape 3 — Publier la page de vente
 
@@ -90,11 +95,11 @@ Sans trafic, zéro vente. Le canal le plus cohérent avec ce produit :
 
 ## Pricing : la logique
 
-| Prix | Positionnement | Volume nécessaire pour 500 €/mois |
+| Prix | Positionnement | Volume pour ~300 000 FCFA (≈500 €)/mois |
 |---|---|---|
-| 9 € | Impulsion, gros volume | ~55 ventes/mois |
-| **19 €** | **Recommandé pour lancer** | ~26 ventes/mois |
-| 39 € | Premium, moins de volume | ~13 ventes/mois |
+| ~5 000 FCFA (9 €) | Impulsion, gros volume | ~55 ventes/mois |
+| **~10 000 FCFA (19 €)** | **Recommandé pour lancer** | ~26 ventes/mois |
+| ~20 000 FCFA (39 €) | Premium, moins de volume | ~13 ventes/mois |
 
 Commence à 19 €, lance en « early bird » à prix barré (39 € → 19 €) pour créer de
 l'urgence. Monte le prix quand tu auras des avis clients.

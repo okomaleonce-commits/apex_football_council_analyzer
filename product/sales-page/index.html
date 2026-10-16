@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Framework APEX — Analyse football</title>
+<meta name="description" content="La méthode quantitative pour analyser un match de football : modèle de Poisson, détection de value, discipline de mise. Produit éducatif." />
+<style>
+  :root{
+    --bg:#0d0d0f; --card:#17171b; --line:#26262c; --fg:#f3f3f5;
+    --muted:#a1a1aa; --accent:#ff6a2b; --accent2:#ffb37a; --ok:#39d98a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px}
+  header{padding:64px 0 40px;text-align:center}
+  .kicker{color:var(--accent);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px}
+  h1{font-size:clamp(30px,6vw,52px);line-height:1.08;margin:14px 0 10px;font-weight:800}
+  h1 .hl{color:var(--accent)}
+  .sub{color:var(--muted);font-size:clamp(16px,2.6vw,20px);max-width:620px;margin:0 auto}
+  .cta{display:inline-block;margin-top:28px;background:var(--accent);color:#1a0d05;
+    font-weight:800;text-decoration:none;padding:16px 30px;border-radius:12px;font-size:17px;
+    transition:transform .12s ease,box-shadow .12s ease;box-shadow:0 8px 30px rgba(255,106,43,.28)}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 12px 38px rgba(255,106,43,.4)}
+  .cta.secondary{background:transparent;color:var(--fg);border:1px solid var(--line);box-shadow:none;margin-left:10px}
+  section{padding:40px 0;border-top:1px solid var(--line)}
+  h2{font-size:clamp(22px,4vw,30px);margin:0 0 22px;font-weight:800}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .card h3{margin:0 0 8px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:15px}
+  .num{color:var(--accent);font-weight:800;font-size:13px;letter-spacing:.1em}
+  ul.clean{list-style:none;padding:0;margin:0}
+  ul.clean li{padding:10px 0 10px 30px;position:relative;border-bottom:1px solid var(--line)}
+  ul.clean li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:800}
+  .price-box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:34px;text-align:center;max-width:420px;margin:0 auto}
+  .price{font-size:52px;font-weight:800;margin:6px 0}
+  .price small{font-size:17px;color:var(--muted);font-weight:600}
+  .was{color:var(--muted);text-decoration:line-through;font-size:20px}
+  .guarantee{color:var(--muted);font-size:14px;margin-top:14px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:10px}
+  summary{cursor:pointer;font-weight:700}
+  details p{color:var(--muted);margin:10px 0 0}
+  .disclaimer{background:#1a1205;border:1px solid #3d2a0a;border-radius:12px;padding:18px;color:var(--accent2);font-size:14px}
+  footer{padding:40px 0 60px;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+  .quote{font-size:clamp(18px,3vw,24px);font-weight:600;line-height:1.4}
+  .quote span{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">Framework APEX · Édition 1.0</div>
+    <h1>Analyse un match de football comme <span class="hl">un quant</span>, pas comme un parieur.</h1>
+    <p class="sub">La méthode complète en 6 étapes : modèle de Poisson, détection de value par l'edge, et la discipline de mise qui sépare ceux qui durent de ceux qui se ruinent.</p>
+    <a class="cta" href="#acheter">Obtenir le framework</a>
+    <a class="cta secondary" href="#methode">Voir la méthode</a>
+  </header>
+
+  <section id="methode">
+    <h2>Les 6 étapes du moteur</h2>
+    <div class="grid">
+      <div class="card"><div class="num">ÉTAPE 1</div><h3>Qualité des données</h3><p>Un score sur 1.0 qui décide si tu as le droit d'avoir une opinion. Sous 0.60 : on s'abstient. C'est ici que la plupart des pertes sont évitées.</p></div>
+      <div class="card"><div class="num">ÉTAPE 2</div><h3>Modèle de Poisson</h3><p>Estimer les buts attendus de chaque équipe, puis la vraie probabilité de chaque issue : 1X2, double chance, BTTS, over/under.</p></div>
+      <div class="card"><div class="num">ÉTAPE 3</div><h3>Prix juste (fair odds)</h3><p>Traduire la probabilité en cote neutre. Le prix auquel le pari ne rapporte ni ne coûte rien en moyenne.</p></div>
+      <div class="card"><div class="num">ÉTAPE 4</div><h3>Détection de value</h3><p>Edge et ROI : le marché paie-t-il plus que le juste prix ? La value, jamais la confiance. C'est le cœur du système.</p></div>
+      <div class="card"><div class="num">ÉTAPE 5</div><h3>Conseil multi-agents</h3><p>Cinq rôles (Contrarian, First Principles, Expansionist, Outsider, Executor) chassent tes angles morts avant que tu valides.</p></div>
+      <div class="card"><div class="num">ÉTAPE 6</div><h3>Verdict + mise</h3><p>BET / NO BET / WAIT, et combien miser : mise plate 1 % ou Kelly fractionné. Règles de survie non négociables.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="quote">« La majorité de la rentabilité, sur le long terme, vient des paris que tu <span>ne fais pas</span>. »</div>
+  </section>
+
+  <section>
+    <h2>Ce que tu reçois</h2>
+    <ul class="clean">
+      <li>Le guide de méthode complet (PDF) — les 6 étapes avec les formules exactes</li>
+      <li>Un worksheet d'analyse (tableur CSV) pour appliquer la méthode match par match</li>
+      <li>L'exemple chiffré de bout en bout, d'une équipe aux fair odds jusqu'au verdict</li>
+      <li>Les 10 commandements et les règles de gestion de bankroll</li>
+      <li>Mises à jour de l'édition incluses</li>
+    </ul>
+  </section>
+
+  <section id="acheter">
+    <h2 style="text-align:center">Obtiens le framework</h2>
+    <div class="price-box">
+      <div class="was">39 €</div>
+      <div class="price">19 €<small> / accès à vie</small></div>
+      <!-- REMPLACE l'URL ci-dessous par ton lien de produit Gumroad / Stripe Payment Link -->
+      <a class="cta" style="display:block;margin-top:18px" href="https://TON-COMPTE.gumroad.com/l/apex-framework" target="_blank" rel="noopener">Acheter maintenant</a>
+      <div class="guarantee">Paiement sécurisé · Livraison automatique · Garantie 14 jours satisfait ou remboursé</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Questions fréquentes</h2>
+    <details><summary>Est-ce que ça garantit de gagner ?</summary><p>Non, et méfie-toi de quiconque le promet. C'est une méthode d'analyse et de discipline. Aucune méthode ne garantit un gain ; les paris comportent un risque réel de perte.</p></details>
+    <details><summary>Faut-il savoir coder ?</summary><p>Non. Le guide s'applique à la main ou dans un tableur. Les formules sont données explicitement.</p></details>
+    <details><summary>C'est pour quel niveau ?</summary><p>Débutant discipliné à intermédiaire. Si tu paries au feeling, c'est fait pour toi. Si tu es déjà quant pro, tu connais sans doute déjà l'essentiel.</p></details>
+    <details><summary>Et le logiciel qui automatise tout ?</summary><p>Il existe (APEX Football Council Analyzer). Le guide enseigne la méthode ; l'outil l'automatise. Les deux sont complémentaires.</p></details>
+  </section>
+
+  <section>
+    <div class="disclaimer">
+      ⚠️ <strong>Avertissement.</strong> Produit éducatif sur une méthode d'analyse statistique. Ce n'est pas un conseil financier ni une incitation à parier. Les paris sportifs comportent un risque de perte d'argent, de dépendance et d'endettement. Réservé aux personnes majeures. Jouer comporte des risques. En France : Joueurs Info Service — 09 74 75 13 13.
+    </div>
+  </section>
+
+  <footer>
+    Framework APEX © 2026 · Produit éducatif · Pas un conseil financier · +18
+  </footer>
+
+</div>
+</body>
+</html>

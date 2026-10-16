@@ -1,0 +1,29 @@
+Etape,Champ,Ta valeur,Formule / Rappel,Seuil
+1 - Donnees,Match exact confirme (oui/non),,+0.20 si oui,
+1 - Donnees,Fixture ID trouve (oui/non),,+0.10 si oui,
+1 - Donnees,Stats des 2 equipes (oui/non),,+0.20 si oui,
+1 - Donnees,Cote marche dispo (oui/non),,+0.20 si oui,
+1 - Donnees,Nb sources fiables actives,,+0.05 chacune (max +0.15),
+1 - Donnees,SCORE QUALITE (/1.0),,base 0.15 + somme ci-dessus,>= 0.60 obligatoire
+2 - Poisson,Buts marques domicile (moy),,,
+2 - Poisson,Buts encaisses domicile (moy),,,
+2 - Poisson,Buts marques exterieur (moy),,,
+2 - Poisson,Buts encaisses exterieur (moy),,,
+2 - Poisson,Lambda domicile,,moy(marq_dom;enc_ext) x 1.08,borne 0.25-3.6
+2 - Poisson,Lambda exterieur,,moy(marq_ext;enc_dom) x 0.96,borne 0.20-3.3
+2 - Poisson,Ajustement blessures (x0.94 si 3+),,,
+3 - Pricing,Marche analyse,,ex: Over 2.5 / Victoire dom,
+3 - Pricing,Proba modele (%),,issue de la matrice Poisson,
+3 - Pricing,Fair odds,,1 / proba_modele,
+4 - Value,Cote marche (best price),,cote la plus haute dispo,
+4 - Value,Proba implicite (%),,1 / cote_marche,
+4 - Value,EDGE,,proba_modele - proba_implicite,>= seuil (0.03-0.05)
+4 - Value,ROI espere,,(proba_modele x cote_marche) - 1,> 0
+5 - Conseil,Contrarian (OK/KO),,cote > fair odds ?,
+5 - Conseil,First Principles (OK/KO),,value reelle pas juste proba haute ?,
+5 - Conseil,Angles morts notes,,,
+6 - Verdict,VERDICT,,BET / NO_BET / WAIT_DATA / WAIT_LINEUPS / MONITOR_LIVE,
+6 - Mise,Fraction Kelly,,edge / (cote - 1),
+6 - Mise,Mise finale (% bankroll),,1/4 Kelly ou mise plate 1%,max 1-2%
+6 - Suivi,Resultat (gagne/perdu),,a remplir apres le match,
+6 - Suivi,Profit/perte unites,,,

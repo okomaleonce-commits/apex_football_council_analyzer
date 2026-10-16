@@ -10,6 +10,7 @@ from app.core.analyzer import FootballAnalyzer
 from app.core.coupon import CouponRequest, build_coupon
 from app.core.data_fetcher import DataFetcher
 from app.core.demo import demo_packs
+from app.core.montante import MontanteRequest, build_montante
 from app.core.scanner import demo_signals, scan_payload
 from app.models import MatchAnalysisRequest
 from app.settings import get_settings
@@ -91,6 +92,12 @@ async def coupon(req: CouponRequest):
     return build_coupon(req).model_dump(mode="json")
 
 
+@app.post("/api/montante")
+async def montante(req: MontanteRequest):
+    """Module Bankroll / Montante : plan de mises progressives + proba de complétion."""
+    return build_montante(req).model_dump(mode="json")
+
+
 @app.get("/api/predictions")
 async def predictions(league: str = Query(default="Ligue 1")):
     """Module Pronostic du jour : chaque match passé au moteur (Poisson + conseil).
@@ -120,3 +127,8 @@ async def platform_coupons():
 @app.get("/predictions")
 async def platform_predictions():
     return FileResponse(PLATFORM_DIR / "predictions.html")
+
+
+@app.get("/montante")
+async def platform_montante():
+    return FileResponse(PLATFORM_DIR / "montante.html")

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>APEX Montante</title>
+<meta name="description" content="Planificateur de montante APEX : plan de mises progressives et probabilité réelle d'aller au bout. Aide à la décision honnête, +18." />
+<style>
+  :root{--bg:#0a0f1e;--card:#121a30;--line:#1f2a45;--fg:#eef2fb;--muted:#9aa6c4;
+    --accent:#3ad6a0;--accent2:#4f8cff;--warn:#ffb37a;--bad:#ff6b6b}
+  :root:not([data-theme="light"]){color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+  header{border-bottom:1px solid var(--line);padding:20px 0}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .brand{font-weight:800;letter-spacing:.14em}.brand b{color:var(--accent)}
+  .nav a{color:var(--muted);font-size:14px;margin-left:18px;text-decoration:none}.nav a:hover{color:var(--fg)}
+  h1{font-size:22px;margin:24px 0 2px}.sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:20px;align-items:start}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 14px}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+  input{width:100%;background:#0e1527;border:1px solid var(--line);color:var(--fg);border-radius:9px;padding:10px 12px;font-size:15px}
+  button{width:100%;margin-top:16px;background:var(--accent);color:#04231a;border:none;border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:15px}
+  button:hover{filter:brightness(1.07)}
+  .hero-stat{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .ks{flex:1;min-width:130px;background:#0e1527;border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .ks .v{font-size:26px;font-weight:800}.ks .l{color:var(--muted);font-size:12px;margin-top:2px}
+  .v.good{color:var(--accent)}.v.mid{color:var(--warn)}.v.bad{color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th{text-align:left;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase}
+  td{padding:9px 8px;border-bottom:1px solid var(--line)}
+  .risk{color:var(--bad)}
+  .warn{color:var(--warn);font-size:12.5px;margin-top:7px;display:flex;gap:6px}
+  .disclaimer{background:#1a1205;border:1px solid #3d2a0a;border-radius:12px;padding:14px;color:var(--warn);font-size:12.5px;margin:24px 0 50px}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="brand"><b>APEX</b> · MONTANTE</div>
+  <div class="nav">
+    <a href="/platform">Accueil</a><a href="/board">Board</a>
+    <a href="/predictions">Pronostics</a><a href="/coupons">Coupons</a>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <h1>Bankroll &amp; Montante</h1>
+  <p class="sub">Plan de mises progressives vers un objectif — et surtout, la probabilité réelle d'aller au bout.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Paramètres</h2>
+      <label>Capital de départ</label><input id="c0" type="number" value="100" min="1">
+      <label>Objectif</label><input id="obj" type="number" value="200" min="1">
+      <label>Cote moyenne par palier</label><input id="cote" type="number" value="1.50" step="0.05" min="1.01">
+      <label>Nombre de paliers</label><input id="n" type="number" value="5" min="1" max="50">
+      <label>Proba de gagner un palier (vide = 1/cote)</label><input id="p" type="number" step="0.01" min="0" max="1" placeholder="auto">
+      <button id="calc">Calculer la montante</button>
+    </div>
+
+    <div class="panel">
+      <h2>Le plan</h2>
+      <div class="hero-stat">
+        <div class="ks"><div class="v" id="completion">—</div><div class="l">proba d'aller au bout</div></div>
+        <div class="ks"><div class="v" id="target">—</div><div class="l">objectif</div></div>
+        <div class="ks"><div class="v" id="steps">—</div><div class="l">paliers</div></div>
+      </div>
+      <table><thead><tr><th>Palier</th><th>Capital</th><th>Mise</th><th>% capital</th><th>Si gain</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="5" style="color:var(--muted)">Lance le calcul.</td></tr></tbody></table>
+      <div id="warns"></div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ La montante ne crée pas de value : chaque pari garde la marge du bookmaker.
+    Elle concentre le risque — une seule défaite casse la série. Aide à la décision
+    éducative, pas un conseil financier ni une garantie. +18 · Joueurs Info Service 09 74 75 13 13.
+  </div>
+</div>
+
+<script>
+const API = "";
+
+// Même calcul que app/core/montante.py (repli client hors serveur).
+function computeLocal(c0,objectif,cote,n,pIn){
+  c0=Math.max(0.01,c0); objectif=Math.max(c0,objectif); cote=Math.max(1.01,cote); n=Math.max(1,Math.min(n,50));
+  let p = (pIn===""||pIn==null||isNaN(pIn)) ? 1/cote : Math.min(Math.max(pIn,0),1);
+  const g = Math.pow(objectif/c0, 1/n);
+  const faisable = g <= cote;
+  const steps=[]; let capital=c0;
+  for(let i=1;i<=n;i++){
+    const cible=capital*g;
+    let mise=(cible-capital)/(cote-1); mise=Math.max(0,Math.min(mise,capital));
+    const apres=capital+mise*(cote-1);
+    steps.push({palier:i,capital_avant:+capital.toFixed(2),mise:+mise.toFixed(2),
+      capital_apres_gain:+apres.toFixed(2),pct_capital_mise:capital?+(100*mise/capital).toFixed(1):0});
+    capital=apres;
+  }
+  const proba_completion=+Math.pow(p,n).toFixed(4);
+  const warnings=[];
+  if(!faisable) warnings.push(`Objectif inatteignable en ${n} paliers à la cote ${cote} : augmente le nombre de paliers ou la cote.`);
+  warnings.push("Une seule défaite fait perdre la mise du palier et casse la série.");
+  warnings.push("La montante ne crée pas de value : la marge du bookmaker reste contre toi à chaque pari.");
+  if(proba_completion<0.20) warnings.push(`Probabilité d'aller au bout faible : ${(proba_completion*100).toFixed(1)}%. À tes risques.`);
+  if(n>=8) warnings.push("8 paliers ou plus : la proba de tout réussir est très faible.");
+  return {steps,nb_paliers:n,cote,proba_palier:+p.toFixed(4),proba_completion,objectif:+objectif.toFixed(2),capital_depart:+c0.toFixed(2),faisable,warnings};
+}
+
+function compClass(x){ return x>=0.4?"good":x>=0.2?"mid":"bad"; }
+
+function render(r){
+  const comp=document.getElementById("completion");
+  comp.textContent=(r.proba_completion*100).toFixed(1)+"%";
+  comp.className="v "+compClass(r.proba_completion);
+  document.getElementById("target").textContent=r.objectif;
+  document.getElementById("steps").textContent=r.nb_paliers;
+  document.getElementById("rows").innerHTML=r.steps.map(s=>`<tr>
+    <td>${s.palier}</td><td>${s.capital_avant}</td>
+    <td class="risk">${s.mise}</td><td>${s.pct_capital_mise}%</td>
+    <td style="color:var(--accent)">${s.capital_apres_gain}</td></tr>`).join("");
+  document.getElementById("warns").innerHTML=(r.warnings||[]).map(w=>`<div class="warn">⚠️ <span>${w}</span></div>`).join("");
+}
+
+async function calc(){
+  const c0=parseFloat(document.getElementById("c0").value)||0;
+  const objectif=parseFloat(document.getElementById("obj").value)||0;
+  const cote=parseFloat(document.getElementById("cote").value)||1.5;
+  const n=parseInt(document.getElementById("n").value)||1;
+  const pRaw=document.getElementById("p").value;
+  const body={capital_depart:c0,objectif,cote,nb_paliers:n,proba_palier:(pRaw===""?null:parseFloat(pRaw))};
+  let r;
+  try{
+    const res=await fetch(`${API}/api/montante`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!res.ok) throw new Error();
+    r=await res.json();
+  }catch(e){ r=computeLocal(c0,objectif,cote,n,pRaw===""?null:parseFloat(pRaw)); }
+  render(r);
+}
+document.getElementById("calc").addEventListener("click",calc);
+calc();
+</script>
+</body>
+</html>

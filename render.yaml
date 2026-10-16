@@ -13,6 +13,10 @@ services:
       mountPath: /var/data
       sizeGB: 1
     envVars:
+      # Python 3.12 : les deps (rapidfuzz, numpy, scipy) ont des wheels
+      # precompilees. 3.13/3.14 forceraient une compilation source qui echoue.
+      - key: PYTHON_VERSION
+        value: "3.12.8"
       - key: APP_ENV
         value: production
       - key: CACHE_TTL_SECONDS

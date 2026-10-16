@@ -8,11 +8,13 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.analyzer import FootballAnalyzer
 from app.core.data_fetcher import DataFetcher
+from app.core.scanner import demo_signals, scan_payload
 from app.models import MatchAnalysisRequest
 from app.settings import get_settings
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+PLATFORM_DIR = BASE_DIR.parent / "platform"
 settings = get_settings()
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
@@ -55,3 +57,37 @@ async def analyze_match(request: MatchAnalysisRequest):
     pack = await fetcher.build_match_pack(request)
     report = analyzer.analyze(pack)
     return report.model_dump(mode="json")
+
+
+@app.get("/api/scan")
+async def scan(league: str = Query(default="Ligue 1"), edge_min: float | None = Query(default=None)):
+    """Module Value Scanner : compare les cotes multi-books et détecte la value.
+
+    Sans clé ODDS_API, renvoie un tableau de démonstration (mode=demo).
+    """
+    threshold = settings.edge_min if edge_min is None else edge_min
+    odds_provider = getattr(fetcher, "odds_api", None)
+    if not odds_provider or not getattr(odds_provider, "enabled", False):
+        return {"mode": "demo", "league": league, "edge_min": threshold,
+                "signals": [s.model_dump(mode="json") for s in demo_signals()]}
+    sport_key = odds_provider.sport_key(league)
+    if not sport_key:
+        raise HTTPException(status_code=400, detail=f"Ligue non supportée par le flux de cotes : {league}")
+    try:
+        payload = await odds_provider.odds(sport_key)
+    except Exception as exc:  # flux indisponible : on reste utilisable en démo
+        return {"mode": "demo", "league": league, "edge_min": threshold, "error": str(exc),
+                "signals": [s.model_dump(mode="json") for s in demo_signals()]}
+    signals = scan_payload(payload, edge_min=threshold)
+    return {"mode": "live", "league": league, "edge_min": threshold,
+            "signals": [s.model_dump(mode="json") for s in signals]}
+
+
+@app.get("/platform")
+async def platform_landing():
+    return FileResponse(PLATFORM_DIR / "index.html")
+
+
+@app.get("/board")
+async def platform_board():
+    return FileResponse(PLATFORM_DIR / "dashboard.html")

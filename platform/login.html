@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>APEX Connexion</title>
+<meta name="description" content="Connexion et inscription à la plateforme APEX." />
+<style>
+  :root{--bg:#0a0f1e;--card:#121a30;--line:#1f2a45;--fg:#eef2fb;--muted:#9aa6c4;--accent:#3ad6a0;--bad:#ff6b6b}
+  :root:not([data-theme="light"]){color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:20px}
+  .box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px}
+  .brand{font-weight:800;letter-spacing:.14em;text-align:center;margin-bottom:6px}.brand b{color:var(--accent)}
+  .tabs{display:flex;gap:8px;margin:18px 0}
+  .tab{flex:1;text-align:center;padding:9px;border-radius:9px;border:1px solid var(--line);cursor:pointer;font-size:14px;color:var(--muted)}
+  .tab.on{background:var(--accent);color:#04231a;font-weight:800;border-color:var(--accent)}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+  input{width:100%;background:#0e1527;border:1px solid var(--line);color:var(--fg);border-radius:9px;padding:11px 12px;font-size:15px}
+  button.go{width:100%;margin-top:18px;background:var(--accent);color:#04231a;border:none;border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:15px}
+  .msg{margin-top:12px;font-size:13px;min-height:18px}.msg.err{color:var(--bad)}.msg.ok{color:var(--accent)}
+  .back{display:block;text-align:center;margin-top:16px;color:var(--muted);font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="brand"><b>APEX</b> · SALLE DE MARCHÉ</div>
+  <div class="tabs">
+    <div class="tab on" id="tLogin">Connexion</div>
+    <div class="tab" id="tReg">Inscription</div>
+  </div>
+  <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="toi@email.com">
+  <label>Mot de passe</label><input id="pass" type="password" autocomplete="current-password" placeholder="8 caractères min.">
+  <button class="go" id="go">Se connecter</button>
+  <div class="msg" id="msg"></div>
+  <a class="back" href="/platform">← Retour à l'accueil</a>
+</div>
+<script>
+let mode="login";
+const msg=document.getElementById("msg");
+function setMode(m){ mode=m;
+  document.getElementById("tLogin").classList.toggle("on",m==="login");
+  document.getElementById("tReg").classList.toggle("on",m==="reg");
+  document.getElementById("go").textContent = m==="login"?"Se connecter":"Créer mon compte";
+  msg.textContent="";
+}
+document.getElementById("tLogin").onclick=()=>setMode("login");
+document.getElementById("tReg").onclick=()=>setMode("reg");
+document.getElementById("go").onclick=async()=>{
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("pass").value;
+  msg.className="msg"; msg.textContent="…";
+  try{
+    const res=await fetch(`/api/${mode==="login"?"login":"register"}`,{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+    const d=await res.json();
+    if(!res.ok){ msg.className="msg err"; msg.textContent=d.detail||"Erreur."; return; }
+    msg.className="msg ok"; msg.textContent="OK, redirection…";
+    location.href="/account";
+  }catch(e){ msg.className="msg err"; msg.textContent="Serveur injoignable."; }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>APEX Compte</title>
+<meta name="description" content="Compte et abonnement APEX." />
+<style>
+  :root{--bg:#0a0f1e;--card:#121a30;--line:#1f2a45;--fg:#eef2fb;--muted:#9aa6c4;--accent:#3ad6a0;--accent2:#4f8cff;--warn:#ffb37a}
+  :root:not([data-theme="light"]){color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:620px;margin:0 auto;padding:0 16px}
+  header{border-bottom:1px solid var(--line);padding:20px 0}
+  header .wrap{display:flex;justify-content:space-between;align-items:center}
+  .brand{font-weight:800;letter-spacing:.14em}.brand b{color:var(--accent)}
+  .nav a{color:var(--muted);font-size:14px;margin-left:16px;text-decoration:none}
+  h1{font-size:22px;margin:26px 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px}
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .row:last-child{border:none}.row .k{color:var(--muted)}
+  .pill{font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px}
+  .pill.on{background:rgba(58,214,160,.15);color:var(--accent)}.pill.off{background:#20273b;color:var(--muted)}
+  .price{font-size:40px;font-weight:800;margin:4px 0}.price small{font-size:16px;color:var(--muted);font-weight:600}
+  button.go{width:100%;margin-top:12px;background:var(--accent);color:#04231a;border:none;border-radius:10px;padding:13px;font-weight:800;cursor:pointer;font-size:15px}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);margin-top:10px}
+  .perks{list-style:none;padding:0;margin:14px 0 0}
+  .perks li{padding:8px 0 8px 26px;position:relative;color:var(--muted);font-size:14px;border-bottom:1px solid var(--line)}
+  .perks li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:800}
+  .msg{font-size:13px;margin-top:10px;min-height:16px}.msg.err{color:#ff6b6b}
+  .disclaimer{color:var(--warn);font-size:12px;margin-top:14px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand"><b>APEX</b> · COMPTE</div>
+  <div class="nav"><a href="/platform">Accueil</a><a href="/predictions">Pronostics</a><a href="#" id="logout">Déconnexion</a></div>
+</div></header>
+
+<div class="wrap">
+  <h1>Mon compte</h1>
+  <div class="card" id="infoCard"><div class="msg">Chargement…</div></div>
+
+  <div class="card" id="subCard" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="color:var(--muted);font-size:13px">APEX Premium</div>
+        <div class="price" id="price">—</div></div>
+    </div>
+    <ul class="perks">
+      <li>Tous les pronostics du jour (pas seulement 2)</li>
+      <li>Value Scanner complet, tous marchés</li>
+      <li>Générateur de coupons &amp; Montante illimités</li>
+    </ul>
+    <button class="go" id="subscribe">S'abonner — paiement mobile money</button>
+    <div class="msg" id="submsg"></div>
+    <div class="disclaimer">⚠️ Paiement via la page sécurisée du prestataire (Orange Money, MTN, Moov, Wave, carte). Aucune garantie de gain. +18.</div>
+  </div>
+</div>
+
+<script>
+async function load(){
+  let me;
+  try{ me=await (await fetch("/api/me")).json(); }
+  catch(e){ document.getElementById("infoCard").innerHTML='<div class="msg err">Serveur injoignable.</div>'; return; }
+  if(!me.authenticated){ location.href="/login"; return; }
+  const sub = me.subscribed;
+  const until = me.subscription_until ? new Date(me.subscription_until).toLocaleDateString('fr-FR') : "—";
+  document.getElementById("infoCard").innerHTML=`
+    <div class="row"><span class="k">Email</span><span>${me.email}</span></div>
+    <div class="row"><span class="k">Statut</span><span class="pill ${sub?'on':'off'}">${sub?'PREMIUM ACTIF':'GRATUIT'}</span></div>
+    <div class="row"><span class="k">Abonnement jusqu'au</span><span>${sub?until:'—'}</span></div>`;
+  const subCard=document.getElementById("subCard");
+  subCard.style.display="block";
+  document.getElementById("subscribe").textContent = sub ? "Prolonger mon abonnement" : "S'abonner — paiement mobile money";
+}
+
+document.getElementById("subscribe").onclick=async()=>{
+  const m=document.getElementById("submsg"); m.className="msg"; m.textContent="Initialisation du paiement…";
+  try{
+    const res=await fetch("/api/subscribe",{method:"POST"});
+    const d=await res.json();
+    if(!res.ok){ m.className="msg err"; m.textContent=d.detail||"Erreur."; return; }
+    location.href=d.payment_url;  // page hébergée (live) ou simulation (démo)
+  }catch(e){ m.className="msg err"; m.textContent="Serveur injoignable."; }
+};
+document.getElementById("logout").onclick=async(e)=>{ e.preventDefault(); await fetch("/api/logout",{method:"POST"}); location.href="/login"; };
+
+async function loadPrice(){
+  try{
+    const c=await (await fetch("/api/config")).json();
+    document.getElementById("price").innerHTML =
+      `${c.subscription_price.toLocaleString('fr-FR')} <small>${c.subscription_currency} / ${c.subscription_days} j</small>`;
+  }catch(e){ document.getElementById("price").innerHTML="5 000 <small>FCFA / 30 j</small>"; }
+}
+loadPrice();
+load();
+</script>
+</body>
+</html>

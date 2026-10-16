@@ -69,7 +69,7 @@
 <header><div class="wrap">
   <div class="brand"><b>APEX</b> · PRONOSTICS</div>
   <div class="nav">
-    <a href="/platform">Accueil</a><a href="/board">Board</a><a href="/coupons">Coupons</a><a href="/montante">Montante</a>
+    <a href="/platform">Accueil</a><a href="/board">Board</a><a href="/coupons">Coupons</a><a href="/montante">Montante</a><a href="/account">Compte</a>
     <span id="mode" class="badge demo">—</span>
   </div>
 </div></header>
@@ -78,6 +78,7 @@
   <h1>Pronostic du jour</h1>
   <p class="sub">Chaque match passé au modèle Poisson + conseil multi-agents. Clique un match pour l'analyse complète.</p>
   <div class="cards" id="cards"></div>
+  <div id="paywall"></div>
   <div class="disclaimer">
     ⚠️ Analyse statistique à vocation éducative, pas un conseil financier ni une
     garantie. Le modèle peut se tromper. Pas de pari sur données insuffisantes. +18 ·
@@ -179,8 +180,18 @@ async function load(){
     modeEl.textContent = data.mode==="live"?"EN DIRECT":"DÉMO";
     modeEl.className = "badge "+(data.mode==="live"?"live":"demo");
     DATA = (data.predictions&&data.predictions.length)?data.predictions:EMBEDDED;
-  }catch(e){ modeEl.textContent="DÉMO"; modeEl.className="badge demo"; DATA = EMBEDDED; }
+    renderPaywall(data.locked_count||0, data.subscribed);
+  }catch(e){ modeEl.textContent="DÉMO"; modeEl.className="badge demo"; DATA = EMBEDDED; renderPaywall(0,false); }
   render();
+}
+function renderPaywall(locked, subscribed){
+  const el=document.getElementById("paywall");
+  if(subscribed || !locked){ el.innerHTML=""; return; }
+  el.innerHTML=`<div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center;margin-top:14px">
+    <div style="font-size:16px;font-weight:700">🔒 ${locked} autres pronostics réservés aux abonnés</div>
+    <div style="color:var(--muted);font-size:14px;margin:6px 0 14px">Débloque tous les pronostics du jour, le scanner complet et les coupons.</div>
+    <a href="/account" style="display:inline-block;background:var(--accent);color:#04231a;font-weight:800;text-decoration:none;padding:11px 22px;border-radius:10px">S'abonner</a>
+  </div>`;
 }
 load();
 </script>

@@ -13,6 +13,7 @@ env/
 .cache/
 *.sqlite
 *.db
+apex.db
 product/dist/
 
 # OS

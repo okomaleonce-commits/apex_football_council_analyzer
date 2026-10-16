@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>APEX Paiement (démo)</title>
+<meta name="description" content="Page de paiement simulée (mode démo) — aucun argent réel." />
+<style>
+  :root{--bg:#0a0f1e;--card:#121a30;--line:#1f2a45;--fg:#eef2fb;--muted:#9aa6c4;--accent:#3ad6a0;--warn:#ffb37a;--bad:#ff6b6b}
+  :root:not([data-theme="light"]){color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:20px}
+  .box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;text-align:center}
+  .sim{background:rgba(255,179,122,.12);border:1px solid #3d2a0a;color:var(--warn);border-radius:10px;padding:8px;font-size:12px;margin-bottom:18px}
+  .amount{font-size:40px;font-weight:800;margin:8px 0}
+  .méthodes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0;color:var(--muted);font-size:12px}
+  .m{border:1px solid var(--line);border-radius:7px;padding:5px 9px}
+  button{width:100%;margin-top:10px;border:none;border-radius:10px;padding:13px;font-weight:800;cursor:pointer;font-size:15px}
+  .pay{background:var(--accent);color:#04231a}
+  .cancel{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .msg{font-size:13px;margin-top:12px;min-height:16px}.msg.ok{color:var(--accent)}.msg.err{color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="sim">⚠️ MODE DÉMO — paiement simulé, aucun argent réel</div>
+  <div style="color:var(--muted);font-size:13px">Abonnement APEX Premium</div>
+  <div class="amount" id="amount">—</div>
+  <div class="méthodes">
+    <span class="m">Orange Money</span><span class="m">MTN MoMo</span><span class="m">Moov</span><span class="m">Wave</span><span class="m">Carte</span>
+  </div>
+  <button class="pay" id="pay">Payer maintenant</button>
+  <button class="cancel" id="cancel">Annuler</button>
+  <div class="msg" id="msg"></div>
+</div>
+<script>
+const tx = new URLSearchParams(location.search).get("tx");
+(async()=>{
+  try{ const c=await (await fetch("/api/config")).json();
+    document.getElementById("amount").innerHTML=`${c.subscription_price.toLocaleString('fr-FR')} ${c.subscription_currency}`;
+  }catch(e){ document.getElementById("amount").textContent="5 000 FCFA"; }
+})();
+document.getElementById("pay").onclick=async()=>{
+  const m=document.getElementById("msg"); m.className="msg"; m.textContent="Traitement…";
+  try{
+    const res=await fetch("/api/payments/confirm-demo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({transaction_id:tx})});
+    const d=await res.json();
+    if(!res.ok){ m.className="msg err"; m.textContent=d.detail||"Erreur."; return; }
+    m.className="msg ok"; m.textContent="Paiement confirmé ! Redirection…";
+    setTimeout(()=>location.href="/account",900);
+  }catch(e){ m.className="msg err"; m.textContent="Serveur injoignable."; }
+};
+document.getElementById("cancel").onclick=()=>location.href="/account";
+</script>
+</body>
+</html>

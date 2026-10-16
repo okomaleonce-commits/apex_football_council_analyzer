@@ -27,6 +27,21 @@ class Settings(BaseSettings):
     data_confidence_min: float = 0.60
     edge_min: float = 0.035
 
+    # --- Comptes, sessions, abonnement ---
+    secret_key: str = "change-me-in-production-please"
+    db_path: str = "apex.db"
+    session_days: int = 30
+    subscription_days: int = 30
+    subscription_price: int = 5000           # en FCFA (XOF) par défaut
+    subscription_currency: str = "XOF"
+    app_base_url: str = "http://localhost:8000"
+
+    # --- Paiement mobile money (CinetPay) ---
+    payments_mode: str = "demo"              # "demo" (simulé) ou "live"
+    cinetpay_base_url: str = "https://api-checkout.cinetpay.com/v2"
+    cinetpay_api_key: str = ""
+    cinetpay_site_id: str = ""
+
     host: str = "0.0.0.0"
     port: int = 8000
 

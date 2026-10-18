@@ -97,11 +97,19 @@ class MarketSignal(BaseModel):
     probability: float
     fair_odds: float
     best_odds: float | None = None
+    market_prob: float | None = None  # vraie proba de marché (marge retirée)
+    overround: float | None = None    # marge bookmaker du marché
     edge: float | None = None
     roi_estimate: float | None = None
     confidence: float
     status: Literal["VALIDATED", "LEAN", "NO_VALUE", "NO_PRICE", "REJECTED"]
     rationale: str
+
+
+class StakePlan(BaseModel):
+    method: str
+    stake_pct: float
+    note: str
 
 
 class AdvisorOutput(BaseModel):
@@ -118,6 +126,10 @@ class CouncilVerdict(BaseModel):
     recommendation: str
     first_action: str
     advisors: list[AdvisorOutput]
+    # Transparence : ce "conseil" est un ensemble de règles déterministes,
+    # pas une délibération multi-LLM.
+    engine: str = "rules"
+    disclaimer: str = ""
 
 
 class AnalysisReport(BaseModel):
@@ -130,5 +142,10 @@ class AnalysisReport(BaseModel):
     primary_bet: MarketSignal | None = None
     alternatives: list[MarketSignal] = Field(default_factory=list)
     council: CouncilVerdict
+    stake_plan: StakePlan | None = None
+    # True tant que la calibration (Brier/log-loss/CLV) n'est pas prouvée :
+    # aucun signal ne doit alors servir à miser de l'argent réel.
+    advisory_only: bool = True
+    calibration: dict[str, Any] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     data_pack_summary: dict[str, Any] = Field(default_factory=dict)

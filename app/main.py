@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.analyzer import FootballAnalyzer
 from app.core.data_fetcher import DataFetcher
+from app.core.tracking import PredictionTracker
 from app.models import MatchAnalysisRequest
 from app.settings import get_settings
 
@@ -21,6 +22,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 fetcher = DataFetcher(settings)
 analyzer = FootballAnalyzer(settings)
+tracker = PredictionTracker(settings.tracking_db_path)
 
 
 @app.get("/")
@@ -53,5 +55,20 @@ async def analyze_match(request: MatchAnalysisRequest):
     if request.home.lower().strip() == request.away.lower().strip():
         raise HTTPException(status_code=400, detail="Home et Away doivent être deux équipes différentes.")
     pack = await fetcher.build_match_pack(request)
-    report = analyzer.analyze(pack)
+    calibration = tracker.calibration_report(min_settled=settings.min_settled_bets)
+    report = analyzer.analyze(pack, calibration=calibration)
+    tracker.log_report(report)  # correction #1 : on trace pour prouver l'edge
     return report.model_dump(mode="json")
+
+
+@app.get("/api/calibration")
+async def calibration():
+    """Preuve d'edge : Brier, log-loss et CLV sur l'historique réglé."""
+    return tracker.calibration_report(min_settled=settings.min_settled_bets)
+
+
+@app.post("/api/settle")
+async def settle(prediction_id: int, won: bool, closing_odds: float | None = Query(default=None)):
+    """Règle une prédiction (résultat réel + cote de clôture) pour alimenter la CLV."""
+    tracker.settle(prediction_id, won=won, closing_odds=closing_odds)
+    return {"ok": True, "prediction_id": prediction_id}

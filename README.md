@@ -10,16 +10,13 @@ Logiciel d'analyse de match de football avec auto data fetching, modélisation P
   - football-data.org : compétitions, matches, standings, équipes.
   - The Odds API : cotes pré-match disponibles selon ligue/sport key.
 - Normalisation des données dans un `DataPack` unique.
-- Score de qualité des données avant toute recommandation.
-- Modèle statistique : Poisson, 1X2, double chance, BTTS, over/under, score exact.
-- Lecture des cotes : probabilité implicite, fair odds, edge, ROI théorique.
-- Conseil multi-agents inspiré de LLM Council :
-  - Contrarian : cherche les pièges.
-  - First Principles : teste les hypothèses.
-  - Expansionist : cherche les opportunités secondaires.
-  - Outsider : vérifie la clarté et les angles morts.
-  - Executor : produit l'action concrète.
-- Verdict final : BET / NO BET / WAIT DATA / WAIT LINEUPS.
+- **Kill-switches de données** (booléens) avant toute recommandation : match non confirmé ou statistiques d'équipes absentes ⇒ `WAIT_DATA`, jamais de pari sur des lambdas par défaut.
+- Modèle statistique : Poisson **avec correction Dixon-Coles** (dépendance des petits scores) et estimation des buts par **forces relatives normalisées par la ligue** (pas une simple moyenne) ; marchés 1X2, double chance, BTTS, over/under, score exact.
+- Lecture des cotes : **la marge du bookmaker est retirée (dévig Shin ou proportionnel)** avant tout calcul d'edge. L'edge compare le modèle aux *vraies* probabilités de marché, jamais à la cote brute.
+- Conseil « multi-agents » : **ensemble de règles déterministes** (ce n'est pas une délibération multi-LLM ; le champ `council.engine = "rules"` et un `disclaimer` le rappellent dans chaque réponse).
+- **Preuve d'edge d'abord** : tant que la calibration (Brier / log-loss / **CLV**) n'est pas validée sur un historique réglé, le moteur reste en `advisory_only` et ne produit jamais de `BET` « argent réel ».
+- **Mise fixe (flat staking)** ; le critère de Kelly est volontairement désactivé tant que les probabilités ne sont pas prouvées calibrées.
+- Verdict final : BET / NO BET / WAIT DATA / WAIT LINEUPS / MONITOR LIVE.
 
 ## Limite honnête
 
@@ -97,11 +94,18 @@ app/
 
 ## Règles de prudence intégrées
 
-- Si confiance données < 0.60 : `NO BET`.
+- Kill-switch : match non confirmé ou stats d'équipes absentes ⇒ `WAIT_DATA` (jamais de lambdas par défaut).
+- Si confiance données < 0.60 : `NO BET` / `WAIT_DATA`.
 - Si kickoff proche et lineups manquantes : `WAIT_LINEUPS`.
-- Si aucune cote fiable : pas de value bet validée.
-- Si edge < seuil minimal : pas de recommandation principale.
-- Si marché volatil ou données contradictoires : réduction de confiance.
+- Si le marché n'est pas complet (toutes les sélections cotées) : marge non retirable ⇒ pas de value mesurable.
+- Si edge dévigé < seuil minimal : pas de recommandation principale.
+- Tant que `calibration_proven` est faux : `advisory_only`, aucun `BET` argent réel.
+
+## Preuve d'edge (endpoints)
+
+- `GET /api/calibration` : Brier, log-loss et CLV sur l'historique des prédictions réglées.
+- `POST /api/settle?prediction_id=<id>&won=<bool>&closing_odds=<float>` : renseigne le résultat réel et la cote de clôture d'une prédiction, pour alimenter la CLV.
+- Chaque `/api/analyze` journalise ses signaux chiffrés (SQLite, `TRACKING_DB_PATH`). Passe `CALIBRATION_PROVEN=True` seulement une fois un edge réellement démontré.
 
 ## Ajouter une source
 

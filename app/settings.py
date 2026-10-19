@@ -27,6 +27,46 @@ class Settings(BaseSettings):
     data_confidence_min: float = 0.60
     edge_min: float = 0.035
 
+    # --- Modèle statistique (correction #2 : Dixon-Coles + ratings relatifs) ---
+    # rho : dépendance des petits scores (Dixon-Coles). Valeur négative ~ -0.13
+    # regonfle les scores de parité (0-0, 1-1) sous-estimés par le Poisson indépendant.
+    dc_rho: float = -0.13
+    max_goals: int = 10
+    # Avantage du terrain appliqué multiplicativement aux lambdas.
+    home_adv: float = 1.10
+    away_adj: float = 0.92
+    # Moyenne de buts par équipe et par match utilisée pour normaliser par ligue
+    # quand on ne dispose pas de la vraie moyenne de la ligue.
+    league_avg_goals: float = 1.35
+
+    # --- Lecture des cotes (correction #3 : dévig avant calcul d'edge) ---
+    # "shin" ou "proportional". Retire la marge du bookmaker pour obtenir les
+    # vraies probabilités de marché avant de comparer au modèle.
+    devig_method: str = "shin"
+
+    # --- Calibration (backtest 2740 matchs, 8 ligues) ---
+    # Le modèle brut est ~2x trop confiant. On mélange ses probas avec les
+    # taux de base (blend) : p' = w*p + (1-w)*base. w=0.5 fait passer le
+    # Brier test des 3 marchés sous 0.25.
+    calibration_blend: float = 0.5
+    base_home: float = 0.43
+    base_draw: float = 0.26
+    base_away: float = 0.31
+    base_over25: float = 0.50
+    base_btts: float = 0.52
+
+    # --- Gestion du risque (correction #5 : flat staking) ---
+    # Mise fixe (fraction de bankroll) tant que la calibration n'est pas prouvée.
+    flat_stake_pct: float = 0.01
+
+    # --- Preuve d'edge (correction #1) ---
+    # Tant que False, le moteur n'émet jamais de BET "argent réel" : les signaux
+    # restent en mode conseil/structuration (advisory_only).
+    calibration_proven: bool = False
+    # Nombre minimal de paris réglés avec CLV positive avant de passer proven.
+    min_settled_bets: int = 100
+    tracking_db_path: str = "/tmp/apex_tracking.sqlite3"
+
     host: str = "0.0.0.0"
     port: int = 8000
 

@@ -44,6 +44,17 @@ class Settings(BaseSettings):
     # vraies probabilités de marché avant de comparer au modèle.
     devig_method: str = "shin"
 
+    # --- Calibration (backtest 2740 matchs, 8 ligues) ---
+    # Le modèle brut est ~2x trop confiant. On mélange ses probas avec les
+    # taux de base (blend) : p' = w*p + (1-w)*base. w=0.5 fait passer le
+    # Brier test des 3 marchés sous 0.25.
+    calibration_blend: float = 0.5
+    base_home: float = 0.43
+    base_draw: float = 0.26
+    base_away: float = 0.31
+    base_over25: float = 0.50
+    base_btts: float = 0.52
+
     # --- Gestion du risque (correction #5 : flat staking) ---
     # Mise fixe (fraction de bankroll) tant que la calibration n'est pas prouvée.
     flat_stake_pct: float = 0.01

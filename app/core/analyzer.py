@@ -8,7 +8,7 @@ from app.core.metrics import (
     fair_odds,
     true_market_probs,
 )
-from app.core.poisson import compute_probabilities
+from app.core.poisson import compute_probabilities, calibrate_probabilities
 from app.models import (
     AdvisorOutput,
     AnalysisReport,
@@ -40,14 +40,14 @@ class FootballAnalyzer:
 
         quality = self._quality(pack)
         lambda_home, lambda_away, defaults_used = self._estimate_lambdas(pack)
-        probabilities = ProbabilitySet(
-            **compute_probabilities(
-                lambda_home,
-                lambda_away,
-                max_goals=self.settings.max_goals,
-                rho=self.settings.dc_rho,
-            )
+        raw = compute_probabilities(
+            lambda_home,
+            lambda_away,
+            max_goals=self.settings.max_goals,
+            rho=self.settings.dc_rho,
         )
+        # Calibration anti-surconfiance (backtest : Brier test < 0.25).
+        probabilities = ProbabilitySet(**calibrate_probabilities(raw, self.settings))
         signals = self._signals(pack, probabilities, quality.score)
         validated = [s for s in signals if s.status == "VALIDATED"]
         lean = [s for s in signals if s.status == "LEAN"]

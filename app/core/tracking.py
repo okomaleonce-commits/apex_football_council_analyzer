@@ -83,13 +83,67 @@ class PredictionTracker:
             conn.commit()
         return len(rows)
 
-    def settle(self, prediction_id: int, won: bool, closing_odds: float | None = None) -> None:
+    def log_entry(self, match_key: str, market: str, selection: str, model_prob: float,
+                  market_prob: float | None, taken_odds: float | None, verdict: str = "") -> int:
+        """Enregistre UNE prédiction avec la cote PRISE (entrée). Retourne son id.
+
+        Sert au flux CLV : la cote de clôture sera renseignée plus tard via
+        record_closing(), puis le résultat via settle().
+        """
+        edge = None if market_prob is None else round(model_prob - market_prob, 4)
         with sqlite3.connect(self.path) as conn:
-            conn.execute(
-                "UPDATE predictions SET settled = 1, won = ?, closing_odds = ? WHERE id = ?",
-                (1 if won else 0, closing_odds, prediction_id),
+            cur = conn.execute(
+                """INSERT INTO predictions
+                   (created_at, match_key, market, selection, model_prob,
+                    market_prob, best_odds, edge, verdict)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (datetime.utcnow().isoformat(), match_key, market, selection,
+                 float(model_prob), market_prob, taken_odds, edge, verdict),
             )
             conn.commit()
+            return int(cur.lastrowid)
+
+    def record_closing(self, prediction_id: int, closing_odds: float) -> None:
+        """Renseigne la cote de CLÔTURE (près du coup d'envoi) sans régler le pari."""
+        with sqlite3.connect(self.path) as conn:
+            conn.execute(
+                "UPDATE predictions SET closing_odds = ? WHERE id = ?",
+                (float(closing_odds), prediction_id),
+            )
+            conn.commit()
+
+    def settle(self, prediction_id: int, won: bool, closing_odds: float | None = None) -> None:
+        """Règle le pari (résultat). closing_odds optionnelle si pas déjà archivée."""
+        with sqlite3.connect(self.path) as conn:
+            if closing_odds is None:
+                conn.execute(
+                    "UPDATE predictions SET settled = 1, won = ? WHERE id = ?",
+                    (1 if won else 0, prediction_id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE predictions SET settled = 1, won = ?, closing_odds = ? WHERE id = ?",
+                    (1 if won else 0, float(closing_odds), prediction_id),
+                )
+            conn.commit()
+
+    def pending_closings(self) -> list[dict]:
+        """Prédictions dont la cote de clôture n'est pas encore archivée."""
+        with sqlite3.connect(self.path) as conn:
+            rows = conn.execute(
+                """SELECT id, match_key, market, selection, best_odds
+                   FROM predictions WHERE closing_odds IS NULL"""
+            ).fetchall()
+        return [{"id": r[0], "match_key": r[1], "market": r[2], "selection": r[3], "taken_odds": r[4]} for r in rows]
+
+    def pending_settlements(self) -> list[dict]:
+        """Prédictions pas encore réglées (résultat manquant)."""
+        with sqlite3.connect(self.path) as conn:
+            rows = conn.execute(
+                """SELECT id, match_key, market, selection
+                   FROM predictions WHERE settled = 0"""
+            ).fetchall()
+        return [{"id": r[0], "match_key": r[1], "market": r[2], "selection": r[3]} for r in rows]
 
     def calibration_report(self, min_settled: int = 100) -> dict[str, Any]:
         with sqlite3.connect(self.path) as conn:
@@ -128,6 +182,7 @@ class PredictionTracker:
         brier = round(brier_sum / settled, 4)
         log_loss = round(ll_sum / settled, 4)
         clv = round(sum(clv_vals) / len(clv_vals), 4) if clv_vals else None
+        clv_pct_beat = round(sum(1 for v in clv_vals if v > 0) / len(clv_vals), 4) if clv_vals else None
         # "Proven" : échantillon suffisant, calibration meilleure que le hasard
         # (Brier < 0.25), et CLV strictement positive.
         proven = settled >= min_settled and brier < 0.25 and clv is not None and clv > 0
@@ -138,6 +193,7 @@ class PredictionTracker:
             "log_loss": log_loss,
             "clv": clv,
             "clv_sample": len(clv_vals),
+            "clv_pct_beat_close": clv_pct_beat,
             "proven": proven,
             "message": (
                 "Edge prouvé sur l'historique réglé."

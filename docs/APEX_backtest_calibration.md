@@ -56,3 +56,17 @@ ni Pinnacle ni les closing lines (Pro+), et aucune cote historique. La CLV n'est
 
 Le Brier < 0.25 est une **condition nécessaire, pas suffisante** : le gate reste
 `advisory_only` tant que la CLV n'est pas prouvée positive.
+
+## Flux d'archivage CLV (implémenté)
+L'infrastructure pour **mesurer** la CLV dès qu'un flux de cotes est branché :
+
+- **Entrée** : `tracker.log_entry(...)` (ou `/api/analyze`) enregistre la cote *prise* au signal.
+- **Clôture** : `POST /api/record_closing?prediction_id=&closing_odds=` (ou
+  `tracker.record_closing`) archive la cote de *clôture* près du coup d'envoi.
+- **Résultat** : `POST /api/settle?prediction_id=&won=` règle le pari.
+- **Mesure** : `GET /api/calibration` renvoie `clv` (moyenne de `1/clôture − 1/prise`,
+  positive = on a battu la clôture) et `clv_pct_beat_close`.
+
+Script cron-able : `python -m scripts.archive_odds {pending|close|settle|report}`.
+Il reste à alimenter les clôtures (SharpAPI Pro+ `get_closing_lines`, The Odds API,
+ou archivage manuel) ; le test de bout en bout du flux est validé.

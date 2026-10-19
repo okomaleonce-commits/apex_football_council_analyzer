@@ -72,3 +72,22 @@ async def settle(prediction_id: int, won: bool, closing_odds: float | None = Que
     """Règle une prédiction (résultat réel + cote de clôture) pour alimenter la CLV."""
     tracker.settle(prediction_id, won=won, closing_odds=closing_odds)
     return {"ok": True, "prediction_id": prediction_id}
+
+
+@app.post("/api/record_closing")
+async def record_closing(prediction_id: int, closing_odds: float):
+    """Archive la cote de clôture d'une prédiction (près du coup d'envoi), sans la régler.
+
+    Étape clé du flux CLV : la cote PRISE est enregistrée au signal, la cote de
+    CLÔTURE ici, et le résultat via /api/settle. La CLV compare prise vs clôture.
+    """
+    tracker.record_closing(prediction_id, closing_odds)
+    return {"ok": True, "prediction_id": prediction_id}
+
+
+@app.get("/api/pending")
+async def pending(kind: str = Query(default="closing")):
+    """Liste les prédictions en attente : kind=closing (cote de clôture) ou settlement (résultat)."""
+    if kind == "settlement":
+        return {"kind": kind, "pending": tracker.pending_settlements()}
+    return {"kind": "closing", "pending": tracker.pending_closings()}
